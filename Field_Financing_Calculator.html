@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Field Financing Calculator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:   #0D1B2A;
+    --panel:  #111E2B;
+    --deep:   #0A1520;
+    --orange: #E8631A;
+    --orange2:#F0824A;
+    --white:  #FFFFFF;
+    --mid:    #8FA3B1;
+    --border: #1E3A4A;
+    --green:  #2ECC71;
+    --green-d:#1A7A42;
+    --red:    #E74C3C;
+    --yellow: #F39C12;
+    --text:   #D6E4F0;
+  }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--navy);
+    color: var(--white);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--navy);
+    padding: 24px 32px 18px;
+    border-bottom: 4px solid var(--orange);
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 6px;
+    background: var(--orange);
+  }
+  .header-left { padding-left: 4px; }
+  .header-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: var(--orange);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .header h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(28px, 5vw, 46px);
+    font-weight: 900;
+    line-height: 1;
+    color: var(--white);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .header h1 span { color: var(--orange); }
+  .header-sub { font-size: 13px; color: var(--mid); margin-top: 5px; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 6px;
+    align-self: flex-end;
+  }
+  .tab {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--mid);
+    background: var(--deep);
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    padding: 9px 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .tab:hover { color: var(--white); border-color: var(--orange); }
+  .tab.active { background: var(--orange); border-color: var(--orange); color: var(--white); }
+
+  /* SCREENS */
+  .screen { display: none; padding: 28px 32px; }
+  .screen.active { display: block; }
+
+  /* ── FIELD VIEW ── */
+  .amount-block {
+    background: var(--panel);
+    border-radius: 6px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+    border: 1px solid var(--border);
+  }
+  .amount-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 12px;
+  }
+  .amount-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    max-width: 420px;
+  }
+  .amount-prefix {
+    position: absolute;
+    left: 18px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 36px;
+    font-weight: 900;
+    color: var(--orange);
+    pointer-events: none;
+    line-height: 1;
+  }
+  #job-amount {
+    width: 100%;
+    background: var(--deep);
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    padding: 16px 20px 16px 52px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 48px;
+    font-weight: 900;
+    color: var(--white);
+    outline: none;
+    transition: border-color 0.2s;
+    -moz-appearance: textfield;
+  }
+  #job-amount::-webkit-outer-spin-button,
+  #job-amount::-webkit-inner-spin-button { -webkit-appearance: none; }
+  #job-amount:focus { border-color: var(--orange); }
+  #job-amount::placeholder { color: #2A4A5A; }
+
+  .amount-hint {
+    font-size: 12px;
+    color: var(--mid);
+    margin-top: 10px;
+  }
+
+  /* RESULTS SECTION */
+  .results-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-bottom: 16px;
+  }
+  .results-label span {
+    color: var(--orange);
+    margin-left: 8px;
+  }
+
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+  }
+
+  /* PLAN CARD */
+  .plan-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px 22px;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+  .plan-card.eligible {
+    border-color: var(--green-d);
+    background: #0B1E14;
+  }
+  .plan-card.eligible:hover { border-color: var(--green); }
+  .plan-card.ineligible { opacity: 0.42; }
+
+  .card-partner {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-bottom: 3px;
+  }
+  .card-plan-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 14px;
+    line-height: 1.2;
+  }
+
+  .card-payment {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .card-payment-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 46px;
+    font-weight: 900;
+    color: var(--green);
+    line-height: 1;
+    transition: all 0.25s ease;
+  }
+  .plan-card.ineligible .card-payment-num { color: var(--mid); }
+  .card-payment-label {
+    font-size: 13px;
+    color: var(--mid);
+    font-weight: 500;
+  }
+
+  .card-dealer-cost {
+    font-size: 12px;
+    color: var(--mid);
+    margin-top: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .card-dealer-cost .cost-val {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--yellow);
+  }
+
+  .card-tag {
+    display: inline-block;
+    background: var(--orange);
+    color: var(--white);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 3px;
+    margin-bottom: 8px;
+  }
+  .card-tag.promo { background: var(--green-d); }
+
+  .card-ineligible-reason {
+    font-size: 12px;
+    color: #5A7A8A;
+    margin-top: 8px;
+    font-style: italic;
+  }
+
+  .no-amount-msg {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--mid);
+    font-size: 16px;
+  }
+  .no-amount-msg strong {
+    display: block;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 32px;
+    font-weight: 900;
+    color: #2A4A5A;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+
+  /* ── SETUP VIEW ── */
+  .setup-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .setup-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--orange);
+  }
+
+  .btn {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 10px 22px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+  .btn-primary {
+    background: var(--orange);
+    color: var(--white);
+  }
+  .btn-primary:hover { background: var(--orange2); }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--mid);
+  }
+  .btn-ghost:hover { border-color: var(--orange); color: var(--white); }
+  .btn-danger {
+    background: transparent;
+    border: 1px solid #4A1A1A;
+    color: #E74C3C;
+    font-size: 12px;
+    padding: 6px 14px;
+  }
+  .btn-danger:hover { background: #2A0A0A; }
+  .btn-sm {
+    font-size: 12px;
+    padding: 7px 16px;
+  }
+
+  /* PARTNER BLOCK */
+  .partner-block {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .partner-header {
+    padding: 18px 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .partner-header:hover { background: #161F2B; }
+  .partner-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .partner-toggle {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    color: var(--orange);
+    width: 20px;
+    text-align: center;
+    transition: transform 0.2s;
+  }
+  .partner-toggle.open { transform: rotate(90deg); }
+  .partner-name-display {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--white);
+  }
+  .partner-plan-count {
+    font-size: 12px;
+    color: var(--mid);
+  }
+  .partner-body {
+    display: none;
+    border-top: 1px solid var(--border);
+    padding: 20px 22px;
+  }
+  .partner-body.open { display: block; }
+
+  /* Partner name edit */
+  .partner-name-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .field-label-s {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--mid);
+    white-space: nowrap;
+  }
+
+  /* PLAN TABLE */
+  .plans-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+    font-size: 13px;
+  }
+  .plans-table th {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--mid);
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .plans-table td {
+    padding: 10px 10px;
+    border-bottom: 1px solid #0F1E2A;
+    vertical-align: middle;
+  }
+  .plans-table tr:last-child td { border-bottom: none; }
+  .plans-table tr:hover td { background: #0D1A26; }
+
+  .plan-input {
+    background: var(--deep);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 7px 10px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 13px;
+    color: var(--white);
+    outline: none;
+    width: 100%;
+    min-width: 80px;
+    transition: border-color 0.15s;
+  }
+  .plan-input:focus { border-color: var(--orange); }
+  .plan-input.wide { min-width: 140px; }
+  .plan-input.narrow { min-width: 60px; max-width: 80px; }
+
+  /* Toggle switch */
+  .toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .toggle {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--border);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    left: 3px; top: 3px;
+    background: var(--mid);
+    border-radius: 50%;
+    transition: all 0.2s;
+  }
+  .toggle input:checked + .toggle-slider { background: var(--green-d); }
+  .toggle input:checked + .toggle-slider::before {
+    transform: translateX(16px);
+    background: var(--green);
+  }
+
+  /* Input field (partner name) */
+  .text-input {
+    background: var(--deep);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 9px 14px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--white);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .text-input:focus { border-color: var(--orange); }
+
+  /* Bottom bar */
+  .bottom-bar {
+    background: var(--navy);
+    border-top: 2px solid var(--border);
+    padding: 14px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .bottom-quote {
+    font-size: 13px;
+    color: var(--mid);
+    font-style: italic;
+  }
+  .bottom-quote strong { color: var(--orange); font-style: normal; }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .header { padding: 18px 16px 14px; }
+    .screen { padding: 20px 16px; }
+    .bottom-bar { padding: 12px 16px; }
+    .amount-block { padding: 20px 16px; }
+    #job-amount { font-size: 36px; }
+    .cards-grid { grid-template-columns: 1fr; }
+    .plans-table { font-size: 12px; }
+    .plans-table th, .plans-table td { padding: 7px 6px; }
+  }
+
+  /* Scroll override on mobile for table */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-label">AI in the Field — Session Tool</div>
+    <h1>Field <span>Financing</span></h1>
+    <div class="header-sub">Type in the job amount. See every option that fits.</div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('field')">Field View</div>
+    <div class="tab" onclick="switchTab('setup')">Partner Setup</div>
+  </div>
+</div>
+
+<!-- ── FIELD VIEW ── -->
+<div class="screen active" id="screen-field">
+
+  <div class="amount-block">
+    <div class="amount-label">Job Amount</div>
+    <div class="amount-input-wrap">
+      <span class="amount-prefix">$</span>
+      <input type="number" id="job-amount" placeholder="0" min="0" oninput="renderCards()">
+    </div>
+    <div class="amount-hint">Enter the total job cost to see available financing options.</div>
+  </div>
+
+  <div id="results-area">
+    <div class="no-amount-msg">
+      <strong>Enter a Job Amount</strong>
+      Eligible financing options will appear here.
+    </div>
+  </div>
+
+</div>
+
+<!-- ── SETUP VIEW ── -->
+<div class="screen" id="screen-setup">
+
+  <div class="setup-header-row">
+    <div class="setup-title">Financing Partners &amp; Plans</div>
+    <button class="btn btn-primary" onclick="addPartner()">+ Add Partner</button>
+  </div>
+
+  <div id="partners-list"></div>
+
+</div>
+
+<div class="bottom-bar">
+  <div class="bottom-quote">
+    "The customer doesn't say no to the job. <strong>They say no to the payment.</strong>"
+  </div>
+  <button class="btn btn-ghost btn-sm" onclick="resetAll()">Reset All</button>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+
+const DEFAULT_PARTNERS = [
+  {
+    id: 'wf',
+    name: 'Wells Fargo',
+    plans: [
+      { id: 'wf1', name: '12 Mo Same As Cash',        term: 12,  factor: 0,       dealerFee: 3.5,  minAmt: 500,   maxAmt: 100000, promo: '0% for 12 months',         active: true },
+      { id: 'wf2', name: '18 Mo Same As Cash',        term: 18,  factor: 0,       dealerFee: 4.5,  minAmt: 500,   maxAmt: 100000, promo: '0% for 18 months',         active: true },
+      { id: 'wf3', name: '60 Mo Same As Cash',        term: 60,  factor: 0,       dealerFee: 6.9,  minAmt: 2000,  maxAmt: 100000, promo: '0% for 60 months',         active: true },
+      { id: 'wf4', name: '72 Mo Same As Cash',        term: 72,  factor: 0,       dealerFee: 7.5,  minAmt: 15000, maxAmt: 100000, promo: '0% for 72 months',         active: true },
+    ]
+  },
+  {
+    id: 'sf',
+    name: 'Service Finance',
+    plans: [
+      { id: 'sf1', name: '18 Mo WPDI (1018)',         term: 18,  factor: 0,       dealerFee: 5.0,  minAmt: 500,   maxAmt: 100000, promo: '18 Mo No Interest',        active: true },
+      { id: 'sf2', name: '60 Mo @ 9.99% (4212)',      term: 60,  factor: 2.1217,  dealerFee: 2.5,  minAmt: 500,   maxAmt: 100000, promo: '',                         active: true },
+      { id: 'sf3', name: '120 Mo @ 9.99% (4132)',     term: 120, factor: 1.3212,  dealerFee: 2.5,  minAmt: 500,   maxAmt: 100000, promo: '',                         active: true },
+      { id: 'sf4', name: '180 Mo @ 6.99% (4089)',     term: 180, factor: 0.8967,  dealerFee: 3.5,  minAmt: 500,   maxAmt: 100000, promo: '',                         active: true },
+      { id: 'sf5', name: '60 Mo @ 9.96% / 6 Mo Deferred (4612)', term: 60, factor: 2.1217, dealerFee: 4.0, minAmt: 500, maxAmt: 100000, promo: '6 Mo No Interest/No Payment', active: true },
+      { id: 'sf6', name: '120 Mo @ 6.99% / 3 Mo Deferred (4316)', term: 120, factor: 1.1607, dealerFee: 3.5, minAmt: 500, maxAmt: 100000, promo: '3 Mo No Interest/No Payment', active: true },
+      { id: 'sf7', name: '60 Mo Equal Payments (3060)', term: 60, factor: 1.6667, dealerFee: 2.0, minAmt: 500, maxAmt: 100000, promo: '', active: true },
+    ]
+  }
+];
+
+let partners = [];
+
+function loadData() {
+  const saved = localStorage.getItem('ffcalc_partners');
+  if (saved) {
+    try { partners = JSON.parse(saved); } catch(e) { partners = JSON.parse(JSON.stringify(DEFAULT_PARTNERS)); }
+  } else {
+    partners = JSON.parse(JSON.stringify(DEFAULT_PARTNERS));
+  }
+}
+
+function saveData() {
+  localStorage.setItem('ffcalc_partners', JSON.stringify(partners));
+}
+
+// ── CALCULATIONS ──────────────────────────────────────────────────────────────
+
+function calcPayment(plan, amount) {
+  // For same-as-cash / deferred (factor === 0), divide by term
+  if (plan.factor === 0) {
+    return amount / plan.term;
+  }
+  // factor is per $1000
+  return (amount / 1000) * plan.factor;
+}
+
+function calcDealerCost(plan, amount) {
+  return amount * (plan.dealerFee / 100);
+}
+
+function isEligible(plan, amount) {
+  if (!plan.active) return false;
+  if (amount < plan.minAmt) return false;
+  if (plan.maxAmt > 0 && amount > plan.maxAmt) return false;
+  return true;
+}
+
+function ineligibleReason(plan, amount) {
+  if (!plan.active) return 'Plan inactive';
+  if (amount < plan.minAmt) return `Minimum $${plan.minAmt.toLocaleString()} — not eligible`;
+  if (plan.maxAmt > 0 && amount > plan.maxAmt) return `Maximum $${plan.maxAmt.toLocaleString()} — not eligible`;
+  return '';
+}
+
+// ── FIELD VIEW ────────────────────────────────────────────────────────────────
+
+function renderCards() {
+  const rawVal = document.getElementById('job-amount').value;
+  const amount = parseFloat(rawVal);
+  const area = document.getElementById('results-area');
+
+  if (!rawVal || isNaN(amount) || amount <= 0) {
+    area.innerHTML = `<div class="no-amount-msg"><strong>Enter a Job Amount</strong>Eligible financing options will appear here.</div>`;
+    return;
+  }
+
+  // Gather all active plans
+  let allPlans = [];
+  partners.forEach(p => {
+    p.plans.forEach(pl => {
+      allPlans.push({ partner: p.name, plan: pl });
+    });
+  });
+
+  if (allPlans.length === 0) {
+    area.innerHTML = `<div class="no-amount-msg"><strong>No Plans Configured</strong>Go to Partner Setup to add financing partners and plans.</div>`;
+    return;
+  }
+
+  // Sort: eligible first
+  const eligible = allPlans.filter(x => isEligible(x.plan, amount));
+  const ineligible = allPlans.filter(x => !isEligible(x.plan, amount));
+
+  let html = '';
+
+  if (eligible.length > 0) {
+    html += `<div class="results-label">Eligible Options<span>${eligible.length} plan${eligible.length !== 1 ? 's' : ''}</span></div>`;
+    html += `<div class="cards-grid">`;
+    eligible.forEach(({ partner, plan }) => {
+      const payment = calcPayment(plan, amount);
+      const dealer = calcDealerCost(plan, amount);
+      html += buildCard(partner, plan, payment, dealer, true);
+    });
+    html += `</div>`;
+  } else {
+    html += `<div class="no-amount-msg"><strong>No Eligible Plans</strong>No financing options match this job amount. Check Partner Setup for minimums.</div>`;
+  }
+
+  if (ineligible.length > 0) {
+    html += `<div class="results-label" style="margin-top:28px;">Not Available at This Amount<span>${ineligible.length} plan${ineligible.length !== 1 ? 's' : ''}</span></div>`;
+    html += `<div class="cards-grid">`;
+    ineligible.forEach(({ partner, plan }) => {
+      html += buildCard(partner, plan, 0, 0, false, ineligibleReason(plan, amount));
+    });
+    html += `</div>`;
+  }
+
+  area.innerHTML = html;
+}
+
+function buildCard(partnerName, plan, payment, dealer, eligible, reason) {
+  const promoTag = plan.promo ? `<div class="card-tag promo">${plan.promo}</div>` : '';
+  const paymentStr = eligible ? `$${Math.round(payment).toLocaleString()}` : '--';
+  const dealerStr = eligible ? `$${Math.round(dealer).toLocaleString()}` : '--';
+
+  return `
+    <div class="plan-card ${eligible ? 'eligible' : 'ineligible'}">
+      ${promoTag}
+      <div class="card-partner">${partnerName}</div>
+      <div class="card-plan-name">${plan.name}</div>
+      <div class="card-payment">
+        <div class="card-payment-num">${paymentStr}</div>
+        <div class="card-payment-label">/mo<br>${plan.term} months</div>
+      </div>
+      <div class="card-dealer-cost">
+        <span>Cost to Company</span>
+        <span class="cost-val">${dealerStr} <span style="font-size:11px;font-weight:400;color:var(--mid)">(${plan.dealerFee}%)</span></span>
+      </div>
+      ${!eligible ? `<div class="card-ineligible-reason">${reason}</div>` : ''}
+    </div>
+  `;
+}
+
+// ── SETUP VIEW ────────────────────────────────────────────────────────────────
+
+function renderSetup() {
+  const list = document.getElementById('partners-list');
+  if (partners.length === 0) {
+    list.innerHTML = `<div style="color:var(--mid);text-align:center;padding:40px;">No partners yet. Click + Add Partner to get started.</div>`;
+    return;
+  }
+
+  list.innerHTML = partners.map((p, pi) => buildPartnerBlock(p, pi)).join('');
+}
+
+function buildPartnerBlock(p, pi) {
+  const planRows = p.plans.map((pl, li) => buildPlanRow(pl, pi, li)).join('');
+  const openClass = p._open ? 'open' : '';
+
+  return `
+    <div class="partner-block" id="partner-block-${pi}">
+      <div class="partner-header" onclick="togglePartner(${pi})">
+        <div class="partner-header-left">
+          <div class="partner-toggle ${openClass}" id="ptoggle-${pi}">&#9658;</div>
+          <div>
+            <div class="partner-name-display">${p.name}</div>
+            <div class="partner-plan-count">${p.plans.length} plan${p.plans.length !== 1 ? 's' : ''}</div>
+          </div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); removePartner(${pi})">Remove</button>
+      </div>
+      <div class="partner-body ${openClass}" id="pbody-${pi}">
+        <div class="partner-name-row">
+          <span class="field-label-s">Partner Name</span>
+          <input class="text-input" value="${p.name}" oninput="updatePartnerName(${pi}, this.value)" style="flex:1;max-width:280px;">
+        </div>
+        <div class="table-scroll">
+          <table class="plans-table">
+            <thead>
+              <tr>
+                <th>Plan Name</th>
+                <th>Term (mo)</th>
+                <th>Pay Factor<br><span style="font-weight:400;font-size:9px;">per $1,000 (0 = SAC)</span></th>
+                <th>Dealer Fee %</th>
+                <th>Min $</th>
+                <th>Max $</th>
+                <th>Promo Label</th>
+                <th>Active</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="plans-tbody-${pi}">
+              ${planRows}
+            </tbody>
+          </table>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="addPlan(${pi})">+ Add Plan</button>
+      </div>
+    </div>
+  `;
+}
+
+function buildPlanRow(pl, pi, li) {
+  return `
+    <tr id="plan-row-${pi}-${li}">
+      <td><input class="plan-input wide" value="${pl.name}" oninput="updatePlan(${pi},${li},'name',this.value)"></td>
+      <td><input class="plan-input narrow" type="number" value="${pl.term}" min="1" oninput="updatePlan(${pi},${li},'term',parseFloat(this.value)||0)"></td>
+      <td><input class="plan-input narrow" type="number" step="0.0001" value="${pl.factor}" min="0" oninput="updatePlan(${pi},${li},'factor',parseFloat(this.value)||0)"></td>
+      <td><input class="plan-input narrow" type="number" step="0.1" value="${pl.dealerFee}" min="0" oninput="updatePlan(${pi},${li},'dealerFee',parseFloat(this.value)||0)"></td>
+      <td><input class="plan-input narrow" type="number" value="${pl.minAmt}" min="0" oninput="updatePlan(${pi},${li},'minAmt',parseFloat(this.value)||0)"></td>
+      <td><input class="plan-input narrow" type="number" value="${pl.maxAmt}" min="0" oninput="updatePlan(${pi},${li},'maxAmt',parseFloat(this.value)||0)"></td>
+      <td><input class="plan-input wide" value="${pl.promo}" placeholder="Optional" oninput="updatePlan(${pi},${li},'promo',this.value)"></td>
+      <td>
+        <label class="toggle">
+          <input type="checkbox" ${pl.active ? 'checked' : ''} onchange="updatePlan(${pi},${li},'active',this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </td>
+      <td><button class="btn btn-danger" style="padding:5px 10px;font-size:11px;" onclick="removePlan(${pi},${li})">&#10005;</button></td>
+    </tr>
+  `;
+}
+
+// ── SETUP ACTIONS ─────────────────────────────────────────────────────────────
+
+function togglePartner(pi) {
+  partners[pi]._open = !partners[pi]._open;
+  renderSetup();
+}
+
+function updatePartnerName(pi, val) {
+  partners[pi].name = val;
+  saveData();
+  // Update display name without full re-render
+  const el = document.querySelector(`#partner-block-${pi} .partner-name-display`);
+  if (el) el.textContent = val;
+}
+
+function updatePlan(pi, li, field, val) {
+  partners[pi].plans[li][field] = val;
+  saveData();
+}
+
+function addPartner() {
+  partners.push({
+    id: 'p' + Date.now(),
+    name: 'New Partner',
+    _open: true,
+    plans: []
+  });
+  saveData();
+  renderSetup();
+}
+
+function removePartner(pi) {
+  if (!confirm(`Remove "${partners[pi].name}" and all its plans?`)) return;
+  partners.splice(pi, 1);
+  saveData();
+  renderSetup();
+}
+
+function addPlan(pi) {
+  partners[pi].plans.push({
+    id: 'pl' + Date.now(),
+    name: 'New Plan',
+    term: 12,
+    factor: 0,
+    dealerFee: 3.0,
+    minAmt: 500,
+    maxAmt: 100000,
+    promo: '',
+    active: true
+  });
+  saveData();
+  renderSetup();
+}
+
+function removePlan(pi, li) {
+  partners[pi].plans.splice(li, 1);
+  saveData();
+  renderSetup();
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+
+function switchTab(tab) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('screen-' + tab).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t => {
+    if (t.textContent.toLowerCase().includes(tab === 'field' ? 'field' : 'partner')) {
+      t.classList.add('active');
+    }
+  });
+  if (tab === 'setup') renderSetup();
+  if (tab === 'field') renderCards();
+}
+
+// ── RESET ─────────────────────────────────────────────────────────────────────
+
+function resetAll() {
+  if (!confirm('Reset everything to defaults? This will clear any custom partners and plans.')) return;
+  partners = JSON.parse(JSON.stringify(DEFAULT_PARTNERS));
+  saveData();
+  document.getElementById('job-amount').value = '';
+  renderCards();
+  renderSetup();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+
+loadData();
+renderCards();
+</script>
+</body>
+</html>
