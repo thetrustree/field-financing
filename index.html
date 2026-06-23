@@ -44,6 +44,8 @@
     }
     .header::before { content:''; position:absolute; left:0; top:0; bottom:0; width:6px; background:var(--royal); }
     .header-left { display:flex; align-items:center; gap:18px; padding-left:4px; }
+    .brand-logo-wrap { width:74px; height:64px; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+    .market-logo { display:none; max-width:74px; max-height:64px; width:auto; height:auto; object-fit:contain; }
     .header-label { font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700; letter-spacing:4px; color:var(--steel); text-transform:uppercase; margin-bottom:3px; }
     .header h1 { font-family:'Barlow Condensed',sans-serif; font-size:clamp(26px,4vw,42px); font-weight:900; line-height:1; color:var(--white); text-transform:uppercase; letter-spacing:1px; }
     .header h1 span { color:var(--royal2); }
@@ -158,6 +160,10 @@
     .lowest-badge.lj4 { background:var(--job4); color:#180C00; }
     .lowest-badge.lj5 { background:var(--job5); color:#001418; }
 
+    .plan-card.lowest-interest-only { border-color:#F472B6!important; background:#180A13!important; box-shadow:0 0 0 2px rgba(244,114,182,0.18); }
+    .plan-card.lowest-interest-only .card-payment-num { color:#F472B6!important; }
+    .interest-badge { display:inline-block; font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:900; letter-spacing:1.5px; text-transform:uppercase; padding:3px 10px; border-radius:3px; margin:0 6px 8px 0; background:#F472B6; color:#210812; }
+
     .card-partner { font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--mid); margin-bottom:2px; }
     .card-plan-name { font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:700; color:var(--white); margin-bottom:12px; line-height:1.2; }
     .card-payment { display:flex; align-items:baseline; gap:6px; margin-bottom:4px; }
@@ -263,6 +269,9 @@
     .import-status.success { border-color:#1A6640; color:#2ECC71; }
     .import-status.error { border-color:#7A1A10; color:#E74C3C; }
     .import-status.loading { color:var(--mid); }
+    .logo-preview { min-height:92px; margin-top:14px; padding:12px; background:var(--deep); border:1px solid var(--border); border-radius:6px; display:flex; align-items:center; justify-content:center; }
+    .logo-preview img { display:none; max-width:260px; max-height:90px; object-fit:contain; }
+    .logo-preview-empty { color:var(--mid); font-size:12px; text-align:center; }
 
     /* BOTTOM BAR */
     .bottom-bar { background:var(--navy); border-top:2px solid var(--border); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
@@ -292,7 +301,8 @@
 
 <div class="header">
   <div class="header-left">
-    <svg width="58" height="58" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+    <div class="brand-logo-wrap">
+    <svg id="default-brand-logo" width="58" height="58" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
       <circle cx="32" cy="32" r="30" fill="none" stroke="#2E6DB4" stroke-width="1.5" opacity="0.5"/>
       <circle cx="32" cy="32" r="25" fill="#060E18" stroke="#1A3A5A" stroke-width="1"/>
       <path d="M9 39 L11 37 L53 37 L55 39 L51 43 L13 43 Z" fill="#2E6DB4" opacity="0.85"/>
@@ -308,8 +318,10 @@
       <line x1="32" y1="24" x2="32" y2="15" stroke="#6A8AA8" stroke-width="1" opacity="0.9"/>
       <line x1="27" y1="18" x2="37" y2="18" stroke="#6A8AA8" stroke-width="0.8" opacity="0.7"/>
     </svg>
+    <img id="market-logo" class="market-logo" alt="Market logo">
+    </div>
     <div>
-      <div class="header-label">Brought to you by Battleship</div>
+      <div class="header-label" id="header-brand-label">Brought to you by Battleship</div>
       <h1>Field <span>Financing</span></h1>
       <div class="header-sub">Type in the job amount. See every option that fits.</div>
     </div>
@@ -352,6 +364,7 @@
     <div class="setup-title">Financing Partners &amp; Plans</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="btn btn-ghost btn-sm" id="share-setup-btn" onclick="copyTeamSetupLink()">&#128279; Copy Team Link</button>
+      <button class="btn btn-ghost btn-sm" onclick="openLogoModal()">&#128444; Change Logo</button>
       <button class="btn btn-ghost btn-sm" onclick="openImport()">&#8593; Import Rate Sheet</button>
       <button class="btn btn-primary" onclick="addPartner()">+ Add Partner</button>
     </div>
@@ -362,6 +375,36 @@
 <div class="bottom-bar">
   <div class="bottom-quote">"The customer doesn't say no to the job. <strong>They say no to the payment.</strong>"</div>
   <button class="btn btn-ghost btn-sm" onclick="resetAll()">Reset All</button>
+</div>
+
+<!-- LOGO MODAL -->
+<div class="modal-overlay" id="logo-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Change <span>Market Logo</span></div>
+      <button class="modal-close" onclick="closeLogoModal()">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="drop-zone" id="logo-drop-zone" onclick="document.getElementById('logo-file-input').click()"
+        ondragover="event.preventDefault(); this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="handleLogoDrop(event)">
+        <div class="drop-zone-icon">&#128444;</div>
+        <div class="drop-zone-title">Drop your market logo here</div>
+        <div class="drop-zone-sub">PNG images work best. Large logos are resized automatically.</div>
+        <input type="file" id="logo-file-input" accept=".png,image/png" onchange="handleLogoFile(this.files[0])">
+      </div>
+      <div class="logo-preview">
+        <img id="logo-preview-image" alt="Selected market logo">
+        <div class="logo-preview-empty" id="logo-preview-empty">The current Battleship logo is being used.</div>
+      </div>
+      <div class="import-status" id="logo-status"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" onclick="removeMarketLogo()">Use Default Logo</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeLogoModal()">Done</button>
+    </div>
+  </div>
 </div>
 
 <!-- IMPORT MODAL -->
@@ -1366,16 +1409,28 @@ let partners = [];
 let jobSlots = [];
 let selectedIndex = 0;
 let currentTab = 'field';
+let marketLogo = '';
+let marketLogoName = '';
 const STORAGE_PREFIX = 'bs_2026_static_';
 
 async function loadData() {
-  const sharedPartners = await readSharedSetupFromUrl();
-  if (sharedPartners) {
-    partners = sharedPartners;
+  const sharedSetup = await readSharedSetupFromUrl();
+  if (sharedSetup) {
+    partners = sharedSetup.partners;
+    marketLogo = sharedSetup.logo || '';
+    marketLogoName = sharedSetup.logoName || '';
     localStorage.setItem(STORAGE_PREFIX + 'partners', JSON.stringify(partners));
+    saveLogo();
     history.replaceState(null, '', location.pathname + location.search);
   } else {
     try { partners = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'partners')) || JSON.parse(JSON.stringify(DEFAULT_PARTNERS)); } catch(e) { partners = JSON.parse(JSON.stringify(DEFAULT_PARTNERS)); }
+    try {
+      marketLogo = localStorage.getItem(STORAGE_PREFIX + 'marketLogo') || '';
+      marketLogoName = localStorage.getItem(STORAGE_PREFIX + 'marketLogoName') || '';
+    } catch(e) {
+      marketLogo = '';
+      marketLogoName = '';
+    }
   }
   try {
     const s = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'slots'));
@@ -1387,6 +1442,114 @@ async function loadData() {
 function saveData() {
   localStorage.setItem(STORAGE_PREFIX + 'partners', JSON.stringify(partners));
   localStorage.setItem(STORAGE_PREFIX + 'slots', JSON.stringify(jobSlots));
+}
+
+function saveLogo() {
+  localStorage.setItem(STORAGE_PREFIX + 'marketLogo', marketLogo);
+  localStorage.setItem(STORAGE_PREFIX + 'marketLogoName', marketLogoName);
+}
+
+function renderBrandLogo() {
+  const defaultLogo = document.getElementById('default-brand-logo');
+  const logo = document.getElementById('market-logo');
+  const label = document.getElementById('header-brand-label');
+  const preview = document.getElementById('logo-preview-image');
+  const empty = document.getElementById('logo-preview-empty');
+  if (marketLogo) {
+    defaultLogo.style.display = 'none';
+    logo.src = marketLogo;
+    logo.style.display = 'block';
+    label.textContent = marketLogoName || 'Market Financing';
+    if (preview) {
+      preview.src = marketLogo;
+      preview.style.display = 'block';
+      empty.style.display = 'none';
+    }
+  } else {
+    defaultLogo.style.display = 'block';
+    logo.removeAttribute('src');
+    logo.style.display = 'none';
+    label.textContent = 'Brought to you by Battleship';
+    if (preview) {
+      preview.removeAttribute('src');
+      preview.style.display = 'none';
+      empty.style.display = 'block';
+    }
+  }
+}
+
+function openLogoModal() {
+  document.getElementById('logo-modal').classList.add('open');
+  setLogoStatus('', '');
+  renderBrandLogo();
+}
+
+function closeLogoModal() {
+  document.getElementById('logo-modal').classList.remove('open');
+  document.getElementById('logo-file-input').value = '';
+}
+
+function handleLogoDrop(event) {
+  event.preventDefault();
+  document.getElementById('logo-drop-zone').classList.remove('drag-over');
+  handleLogoFile(event.dataTransfer.files[0]);
+}
+
+async function handleLogoFile(file) {
+  if (!file) return;
+  if (file.type !== 'image/png' && !/\.png$/i.test(file.name)) {
+    setLogoStatus('Please choose a PNG image.', 'error');
+    return;
+  }
+  setLogoStatus('Preparing logo...', 'loading');
+  try {
+    marketLogo = await resizeLogo(file);
+    marketLogoName = file.name.replace(/\.png$/i, '').replace(/[-_]+/g, ' ').trim() || 'Market Financing';
+    saveLogo();
+    renderBrandLogo();
+    setLogoStatus('Logo saved. Copy Team Link will include it.', 'success');
+  } catch (error) {
+    setLogoStatus(error.message || 'Could not read that logo.', 'error');
+  }
+}
+
+function resizeLogo(file) {
+  return new Promise(function(resolve, reject) {
+    const reader = new FileReader();
+    reader.onerror = function(){ reject(new Error('Could not read that PNG image.')); };
+    reader.onload = function() {
+      const image = new Image();
+      image.onerror = function(){ reject(new Error('That PNG image could not be opened.')); };
+      image.onload = function() {
+        const maxWidth = 420;
+        const maxHeight = 160;
+        const scale = Math.min(1, maxWidth / image.width, maxHeight / image.height);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        const context = canvas.getContext('2d');
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/webp', 0.82));
+      };
+      image.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function removeMarketLogo() {
+  marketLogo = '';
+  marketLogoName = '';
+  saveLogo();
+  renderBrandLogo();
+  setLogoStatus('The default Battleship logo is restored.', 'success');
+}
+
+function setLogoStatus(message, type) {
+  const status = document.getElementById('logo-status');
+  status.textContent = message;
+  status.className = 'import-status' + (message ? ' visible ' + type : '');
 }
 
 async function copyTeamSetupLink() {
@@ -1415,7 +1578,7 @@ async function copyTeamSetupLink() {
         })
       };
     });
-    const payload = await encodeSharedSetup(JSON.stringify({version:1, partners:cleanPartners}));
+    const payload = await encodeSharedSetup(JSON.stringify({version:2, partners:cleanPartners, logo:marketLogo, logoName:marketLogoName}));
     const url = location.href.split('#')[0] + '#team-setup=' + payload;
     await copyText(url);
     button.innerHTML = '&#10003; Link Copied';
@@ -1430,12 +1593,12 @@ async function readSharedSetupFromUrl() {
   try {
     const payload = location.hash.slice('#team-setup='.length);
     const data = JSON.parse(await decodeSharedSetup(payload));
-    if (!data || data.version !== 1 || !Array.isArray(data.partners)) throw new Error('Invalid setup');
+    if (!data || (data.version !== 1 && data.version !== 2) || !Array.isArray(data.partners)) throw new Error('Invalid setup');
     const valid = data.partners.every(function(partner) {
       return partner && typeof partner.name === 'string' && Array.isArray(partner.plans);
     });
     if (!valid) throw new Error('Invalid setup');
-    return data.partners.map(function(partner, pi) {
+    const sharedPartners = data.partners.map(function(partner, pi) {
       return {
         id: partner.id || 'shared-p' + pi,
         name: partner.name,
@@ -1455,6 +1618,12 @@ async function readSharedSetupFromUrl() {
         })
       };
     });
+    const sharedLogo = typeof data.logo === 'string' && /^data:image\/(?:webp|png|jpeg);base64,/i.test(data.logo) ? data.logo : '';
+    return {
+      partners: sharedPartners,
+      logo: sharedLogo,
+      logoName: typeof data.logoName === 'string' ? data.logoName.slice(0, 80) : ''
+    };
   } catch (error) {
     alert('This team setup link is damaged or incomplete. Your saved setup will be used instead.');
     return null;
@@ -1537,6 +1706,18 @@ function ineligibleReason(plan, amount) {
   if (amount < plan.minAmt) return 'Minimum $' + plan.minAmt.toLocaleString() + ' — not eligible';
   if (plan.maxAmt > 0 && amount > plan.maxAmt) return 'Maximum $' + plan.maxAmt.toLocaleString() + ' — not eligible';
   return '';
+}
+
+function getPlanInterestRate(plan) {
+  const name = String(plan.name || '');
+  const promo = String(plan.promo || '');
+  const nameRate = name.match(/(\d+(?:\.\d+)?)\s*%\s*(?:APR|interest)/i);
+  if (nameRate) return parseFloat(nameRate[1]);
+  if (/\b(?:zero|no)\s+interest\b/i.test(name)) return 0;
+  const promoRate = promo.match(/(\d+(?:\.\d+)?)\s*%\s*(?:APR|interest)/i);
+  if (promoRate) return parseFloat(promoRate[1]);
+  if (/\b(?:zero|no)\s+interest\b/i.test(promo)) return 0;
+  return null;
 }
 
 // Get lowest payment for a slot
@@ -1662,11 +1843,22 @@ function renderCards() {
   const eligible = allPlans.filter(function(x) { return isEligible(x.plan, amount); });
   const ineligible = allPlans.filter(function(x) { return !isEligible(x.plan, amount); });
 
-  // Find lowest payment plan
+  // Find lowest payment and lowest stated interest plans.
   let lowestPayment = Infinity, lowestPlanId = null;
   eligible.forEach(function(x) {
     const p = calcPayment(x.plan, amount);
     if (p < lowestPayment) { lowestPayment = p; lowestPlanId = x.plan.id; }
+  });
+  let lowestInterest = Infinity, lowestInterestPayment = Infinity, lowestInterestPlanId = null;
+  eligible.forEach(function(x) {
+    const rate = getPlanInterestRate(x.plan);
+    if (rate === null) return;
+    const payment = calcPayment(x.plan, amount);
+    if (rate < lowestInterest || (rate === lowestInterest && payment < lowestInterestPayment)) {
+      lowestInterest = rate;
+      lowestInterestPayment = payment;
+      lowestInterestPlanId = x.plan.id;
+    }
   });
 
   let html = '<div class="results-label">Selected: ' + (slot.label || 'Job') + '<span>$' + amount.toLocaleString() + '</span></div>';
@@ -1677,7 +1869,8 @@ function renderCards() {
     sorted.forEach(function(x) {
       const payment = calcPayment(x.plan, amount);
       const isLowest = x.plan.id === lowestPlanId;
-      html += buildCard(x.partner, x.plan, payment, isLowest, true, '', colorIdx);
+      const isLowestInterest = x.plan.id === lowestInterestPlanId;
+      html += buildCard(x.partner, x.plan, payment, isLowest, isLowestInterest, true, '', colorIdx);
     });
     html += '</div>';
   } else {
@@ -1688,7 +1881,7 @@ function renderCards() {
     html += '<div class="results-label" style="margin-top:28px;">Not Available<span>' + ineligible.length + ' plan' + (ineligible.length !== 1 ? 's':'') + '</span></div>';
     html += '<div class="cards-grid">';
     ineligible.forEach(function(x) {
-      html += buildCard(x.partner, x.plan, 0, false, false, ineligibleReason(x.plan, amount), colorIdx);
+      html += buildCard(x.partner, x.plan, 0, false, false, false, ineligibleReason(x.plan, amount), colorIdx);
     });
     html += '</div>';
   }
@@ -1696,16 +1889,19 @@ function renderCards() {
   area.innerHTML = html;
 }
 
-function buildCard(partnerName, plan, payment, isLowest, eligible, reason, colorIdx) {
+function buildCard(partnerName, plan, payment, isLowest, isLowestInterest, eligible, reason, colorIdx) {
   const promoTag = plan.promo ? '<div class="card-tag promo">' + plan.promo + '</div>' : '';
   const paymentStr = eligible ? '$' + Math.round(payment).toLocaleString() : '--';
   const lowestClass = isLowest ? ' lowest-j' + colorIdx : '';
+  const interestClass = isLowestInterest && !isLowest ? ' lowest-interest-only' : '';
   const lowestBadge = isLowest ? '<div class="lowest-badge lj' + colorIdx + '">&#9660; Lowest Payment</div>' : '';
+  const rate = getPlanInterestRate(plan);
+  const interestBadge = isLowestInterest ? '<div class="interest-badge">&#9733; Lowest Interest' + (rate !== null ? ' &middot; ' + rate + '%' : '') + '</div>' : '';
   const termLabel = plan.term > 0 ? plan.term + ' months' : 'variable term';
 
   // Field view: NO cost to company shown
-  return '<div class="plan-card' + (eligible ? ' eligible' : ' ineligible') + lowestClass + '">' +
-    lowestBadge + promoTag +
+  return '<div class="plan-card' + (eligible ? ' eligible' : ' ineligible') + lowestClass + interestClass + '">' +
+    lowestBadge + interestBadge + promoTag +
     '<div class="card-partner">' + partnerName + '</div>' +
     '<div class="card-plan-name">' + plan.name + '</div>' +
     '<div class="card-payment">' +
@@ -2258,6 +2454,7 @@ function fileToArrayBuffer(file) {
 // INIT
 async function init() {
   await loadData();
+  renderBrandLogo();
   renderAmountGrid();
   renderCards();
   renderOfficeSummary();
