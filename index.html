@@ -1,0 +1,2262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Field Financing Calculator — Battleship</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500;600;700&display=swap');
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:   #08121E;
+      --panel:  #0D1B2A;
+      --deep:   #060E18;
+      --royal:  #2E6DB4;
+      --royal2: #4A8FD4;
+      --white:  #FFFFFF;
+      --mid:    #7A9BB5;
+      --border: #1A3A5A;
+      --steel:  #A8BFCF;
+      --gray:   #4A6070;
+      /* Job slot colors */
+      --job0: #2ECC71; --job0d: #1A6640; --job0bg: #071812;
+      --job1: #F5C842; --job1d: #7A6010; --job1bg: #181200;
+      --job2: #E74C3C; --job2d: #7A1A10; --job2bg: #180806;
+      --job3: #A855F7; --job3d: #5A2090; --job3bg: #120818;
+      --job4: #F97316; --job4d: #7A3808; --job4bg: #180C00;
+      --job5: #06B6D4; --job5d: #065A6A; --job5bg: #001418;
+    }
+
+    body { font-family: 'Barlow', sans-serif; background: var(--navy); color: var(--white); min-height: 100vh; overflow-x: hidden; }
+
+    /* HEADER */
+    .header {
+      background: var(--navy);
+      padding: 20px 32px 16px;
+      border-bottom: 4px solid var(--royal);
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .header::before { content:''; position:absolute; left:0; top:0; bottom:0; width:6px; background:var(--royal); }
+    .header-left { display:flex; align-items:center; gap:18px; padding-left:4px; }
+    .header-label { font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700; letter-spacing:4px; color:var(--steel); text-transform:uppercase; margin-bottom:3px; }
+    .header h1 { font-family:'Barlow Condensed',sans-serif; font-size:clamp(26px,4vw,42px); font-weight:900; line-height:1; color:var(--white); text-transform:uppercase; letter-spacing:1px; }
+    .header h1 span { color:var(--royal2); }
+    .header-sub { font-size:12px; color:var(--mid); margin-top:4px; }
+
+    .tabs { display:flex; gap:6px; align-self:center; }
+    .tab { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--mid); background:var(--deep); border:2px solid var(--border); border-radius:4px; padding:9px 18px; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+    .tab:hover { color:var(--white); border-color:var(--royal); }
+    .tab.active { background:var(--royal); border-color:var(--royal); color:var(--white); }
+
+    .screen { display:none; padding:28px 32px; }
+    .screen.active { display:block; }
+
+    /* AMOUNT BLOCK */
+    .amount-block { background:var(--panel); border-radius:6px; padding:24px 28px; margin-bottom:24px; border:1px solid var(--border); }
+    .amount-label { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:4px; text-transform:uppercase; color:var(--royal2); margin-bottom:6px; }
+    .amount-hint { font-size:12px; color:var(--mid); margin-bottom:16px; }
+
+    .amount-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+
+    .amount-cell {
+      background:var(--deep);
+      border:2px solid var(--border);
+      border-radius:8px;
+      overflow:hidden;
+      transition:border-color 0.2s, box-shadow 0.2s;
+      cursor:pointer;
+      position:relative;
+    }
+    /* Job color borders */
+    .amount-cell.job-0 { border-color: var(--job0d); }
+    .amount-cell.job-1 { border-color: var(--job1d); }
+    .amount-cell.job-2 { border-color: var(--job2d); }
+    .amount-cell.job-3 { border-color: var(--job3d); }
+    .amount-cell.job-4 { border-color: var(--job4d); }
+    .amount-cell.job-5 { border-color: var(--job5d); }
+
+    .amount-cell.active.job-0 { border-color:var(--job0); box-shadow:0 0 0 2px rgba(46,204,113,0.2); background:var(--job0bg); }
+    .amount-cell.active.job-1 { border-color:var(--job1); box-shadow:0 0 0 2px rgba(245,200,66,0.2); background:var(--job1bg); }
+    .amount-cell.active.job-2 { border-color:var(--job2); box-shadow:0 0 0 2px rgba(231,76,60,0.2); background:var(--job2bg); }
+    .amount-cell.active.job-3 { border-color:var(--job3); box-shadow:0 0 0 2px rgba(168,85,247,0.2); background:var(--job3bg); }
+    .amount-cell.active.job-4 { border-color:var(--job4); box-shadow:0 0 0 2px rgba(249,115,22,0.2); background:var(--job4bg); }
+    .amount-cell.active.job-5 { border-color:var(--job5); box-shadow:0 0 0 2px rgba(6,182,212,0.2); background:var(--job5bg); }
+
+    .amount-cell-header { display:flex; align-items:center; gap:6px; padding:10px 10px 0; }
+
+    .job-label-input {
+      flex:1; background:rgba(255,255,255,0.04); border:1px solid transparent; border-radius:4px;
+      padding:8px 10px; color:var(--white); font-family:'Barlow Condensed',sans-serif;
+      font-size:13px; font-weight:700; outline:none; transition:border-color 0.2s,background 0.2s; width:100%;
+    }
+    .job-label-input:focus { border-color:var(--royal); background:rgba(46,109,180,0.08); }
+
+    .delete-job-btn { background:transparent; border:none; color:var(--gray); font-size:16px; cursor:pointer; padding:4px 6px; border-radius:4px; line-height:1; flex-shrink:0; transition:color 0.15s,background 0.15s; }
+    .delete-job-btn:hover { color:#E74C3C; background:rgba(231,76,60,0.12); }
+
+    .amount-cell-value { min-height:56px; display:flex; align-items:center; padding:4px 10px 6px; }
+    .amount-hidden { width:100%; font-family:'Barlow Condensed',sans-serif; font-size:13px; color:var(--gray); padding:10px 0; }
+
+    .amount-cell input[type=number] { width:100%; background:transparent; border:none; color:var(--white); font-family:'Barlow Condensed',sans-serif; font-size:26px; font-weight:900; padding:6px 2px; outline:none; }
+    .amount-cell input[type=number]::placeholder { color:#2A4A5A; }
+    .amount-cell input[type=number]::-webkit-outer-spin-button,
+    .amount-cell input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; }
+
+    /* Lowest payment synopsis in each slot */
+    .slot-synopsis {
+      padding:6px 10px 10px;
+      font-family:'Barlow Condensed',sans-serif;
+      font-size:14px;
+      font-weight:700;
+    }
+    .slot-synopsis.job-0 { color:var(--job0); }
+    .slot-synopsis.job-1 { color:var(--job1); }
+    .slot-synopsis.job-2 { color:var(--job2); }
+    .slot-synopsis.job-3 { color:var(--job3); }
+    .slot-synopsis.job-4 { color:var(--job4); }
+    .slot-synopsis.job-5 { color:var(--job5); }
+    .slot-synopsis-label { font-size:9px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--gray); display:block; margin-bottom:1px; }
+
+    .add-job-btn { background:var(--deep); border:2px dashed var(--border); border-radius:8px; padding:20px; text-align:center; cursor:pointer; color:var(--gray); font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:700; letter-spacing:2px; text-transform:uppercase; transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:8px; min-height:100px; }
+    .add-job-btn:hover { border-color:var(--royal); color:var(--royal2); }
+
+    /* RESULTS */
+    .results-label { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:4px; text-transform:uppercase; color:var(--mid); margin-bottom:14px; }
+    .results-label span { color:var(--royal2); margin-left:8px; }
+    .cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:14px; }
+
+    .plan-card { background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:18px 20px; position:relative; transition:border-color 0.2s; }
+    .plan-card.eligible { border-color:#1A3A2A; background:#060E08; }
+    .plan-card.ineligible { opacity:0.35; }
+
+    /* Lowest payment card gets job color */
+    .plan-card.lowest-j0 { border-color:var(--job0)!important; background:var(--job0bg)!important; box-shadow:0 0 0 2px rgba(46,204,113,0.15); }
+    .plan-card.lowest-j1 { border-color:var(--job1)!important; background:var(--job1bg)!important; box-shadow:0 0 0 2px rgba(245,200,66,0.15); }
+    .plan-card.lowest-j2 { border-color:var(--job2)!important; background:var(--job2bg)!important; box-shadow:0 0 0 2px rgba(231,76,60,0.15); }
+    .plan-card.lowest-j3 { border-color:var(--job3)!important; background:var(--job3bg)!important; box-shadow:0 0 0 2px rgba(168,85,247,0.15); }
+    .plan-card.lowest-j4 { border-color:var(--job4)!important; background:var(--job4bg)!important; box-shadow:0 0 0 2px rgba(249,115,22,0.15); }
+    .plan-card.lowest-j5 { border-color:var(--job5)!important; background:var(--job5bg)!important; box-shadow:0 0 0 2px rgba(6,182,212,0.15); }
+
+    .plan-card.lowest-j0 .card-payment-num { color:var(--job0)!important; }
+    .plan-card.lowest-j1 .card-payment-num { color:var(--job1)!important; }
+    .plan-card.lowest-j2 .card-payment-num { color:var(--job2)!important; }
+    .plan-card.lowest-j3 .card-payment-num { color:var(--job3)!important; }
+    .plan-card.lowest-j4 .card-payment-num { color:var(--job4)!important; }
+    .plan-card.lowest-j5 .card-payment-num { color:var(--job5)!important; }
+
+    .lowest-badge { display:inline-block; font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:900; letter-spacing:1.5px; text-transform:uppercase; padding:3px 10px; border-radius:3px; margin-bottom:8px; }
+    .lowest-badge.lj0 { background:var(--job0); color:#061210; }
+    .lowest-badge.lj1 { background:var(--job1); color:#181200; }
+    .lowest-badge.lj2 { background:var(--job2); color:#180806; }
+    .lowest-badge.lj3 { background:var(--job3); color:#120818; }
+    .lowest-badge.lj4 { background:var(--job4); color:#180C00; }
+    .lowest-badge.lj5 { background:var(--job5); color:#001418; }
+
+    .card-partner { font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--mid); margin-bottom:2px; }
+    .card-plan-name { font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:700; color:var(--white); margin-bottom:12px; line-height:1.2; }
+    .card-payment { display:flex; align-items:baseline; gap:6px; margin-bottom:4px; }
+    .card-payment-num { font-family:'Barlow Condensed',sans-serif; font-size:44px; font-weight:900; color:#2ECC71; line-height:1; transition:color 0.2s; }
+    .plan-card.ineligible .card-payment-num { color:var(--mid); }
+    .card-payment-label { font-size:12px; color:var(--mid); font-weight:500; }
+
+    .card-tag { display:inline-block; background:var(--royal); color:var(--white); font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; padding:3px 10px; border-radius:3px; margin-bottom:8px; }
+    .card-tag.promo { background:#1A6640; }
+    .card-ineligible-reason { font-size:12px; color:#3A5A6A; margin-top:8px; font-style:italic; }
+
+    .no-amount-msg { text-align:center; padding:60px 20px; color:var(--mid); font-size:16px; }
+    .no-amount-msg strong { display:block; font-family:'Barlow Condensed',sans-serif; font-size:30px; font-weight:900; color:#1A3A5A; margin-bottom:8px; text-transform:uppercase; }
+
+    /* OFFICE SUMMARY */
+    .job-summary { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px 18px; overflow:hidden; }
+    .summary-table-wrap { width:100%; overflow-x:auto; }
+    .summary-table { width:100%; min-width:580px; border-collapse:collapse; font-size:13px; color:var(--white); }
+    .summary-table th, .summary-table td { padding:9px 11px; border-bottom:1px solid var(--border); white-space:nowrap; text-align:right; }
+    .summary-table th { font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--mid); background:rgba(255,255,255,0.03); text-align:left; }
+    .summary-table th:first-child, .summary-table td:first-child { text-align:left; min-width:160px; white-space:normal; }
+    .summary-table td { font-family:'Barlow Condensed',sans-serif; font-size:14px; }
+    .summary-table td.empty { color:#3A5060; font-style:italic; }
+    .summary-table tr.partner-row td { background:rgba(255,255,255,0.03); font-weight:700; color:var(--mid); letter-spacing:0.7px; text-transform:uppercase; }
+    .summary-table th.active-col, .summary-table td.active-col { background:rgba(46,109,180,0.14); border-color:rgba(46,109,180,0.28); }
+
+    /* SETUP */
+    .setup-header-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+    .setup-title { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:4px; text-transform:uppercase; color:var(--royal2); }
+
+    .btn { font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:700; letter-spacing:2px; text-transform:uppercase; padding:10px 20px; border-radius:4px; cursor:pointer; border:none; transition:all 0.15s; }
+    .btn-primary { background:var(--royal); color:var(--white); }
+    .btn-primary:hover { background:var(--royal2); }
+    .btn-ghost { background:transparent; border:1px solid var(--border); color:var(--mid); }
+    .btn-ghost:hover { border-color:var(--royal); color:var(--white); }
+    .btn-danger { background:transparent; border:1px solid #4A1A1A; color:#E74C3C; font-size:12px; padding:6px 14px; }
+    .btn-danger:hover { background:#2A0A0A; }
+    .btn-sm { font-size:12px; padding:7px 14px; }
+
+    .partner-block { background:var(--panel); border:1px solid var(--border); border-radius:6px; margin-bottom:14px; overflow:hidden; }
+    .partner-header { padding:16px 20px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; transition:background 0.15s; }
+    .partner-header:hover { background:#0F1D2E; }
+    .partner-header-left { display:flex; align-items:center; gap:12px; }
+    .partner-toggle { font-family:'Barlow Condensed',sans-serif; font-size:18px; color:var(--royal2); width:18px; text-align:center; transition:transform 0.2s; }
+    .partner-toggle.open { transform:rotate(90deg); }
+    .partner-name-display { font-family:'Barlow Condensed',sans-serif; font-size:19px; font-weight:700; color:var(--white); }
+    .partner-plan-count { font-size:12px; color:var(--mid); }
+    .partner-body { display:none; border-top:1px solid var(--border); padding:18px 20px; }
+    .partner-body.open { display:block; }
+    .partner-name-row { display:flex; align-items:center; gap:12px; margin-bottom:18px; flex-wrap:wrap; }
+    .field-label-s { font-size:11px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--mid); white-space:nowrap; }
+
+    .plans-table { width:100%; border-collapse:collapse; margin-bottom:14px; font-size:13px; }
+    .plans-table th { font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--mid); text-align:left; padding:8px 10px; border-bottom:1px solid var(--border); white-space:nowrap; }
+    .plans-table td { padding:9px 10px; border-bottom:1px solid #0A1828; vertical-align:middle; }
+    .plans-table tr:last-child td { border-bottom:none; }
+    .plans-table tr:hover td { background:#0A1620; }
+
+    .plan-input { background:var(--deep); border:1px solid var(--border); border-radius:3px; padding:7px 10px; font-family:'Barlow',sans-serif; font-size:13px; color:var(--white); outline:none; width:100%; min-width:80px; transition:border-color 0.15s; }
+    .plan-input:focus { border-color:var(--royal); }
+    .plan-input.wide { min-width:140px; }
+    .plan-input.narrow { min-width:60px; max-width:80px; }
+
+    .toggle { position:relative; width:36px; height:20px; flex-shrink:0; }
+    .toggle input { opacity:0; width:0; height:0; }
+    .toggle-slider { position:absolute; inset:0; background:var(--border); border-radius:20px; cursor:pointer; transition:background 0.2s; }
+    .toggle-slider::before { content:''; position:absolute; width:14px; height:14px; left:3px; top:3px; background:var(--mid); border-radius:50%; transition:all 0.2s; }
+    .toggle input:checked + .toggle-slider { background:#1A6640; }
+    .toggle input:checked + .toggle-slider::before { transform:translateX(16px); background:#2ECC71; }
+
+    .text-input { background:var(--deep); border:1px solid var(--border); border-radius:4px; padding:9px 14px; font-family:'Barlow',sans-serif; font-size:15px; font-weight:600; color:var(--white); outline:none; transition:border-color 0.15s; }
+    .text-input:focus { border-color:var(--royal); }
+
+    /* IMPORT MODAL */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:1000; align-items:center; justify-content:center; padding:20px; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:var(--panel); border:1px solid var(--border); border-radius:8px; width:100%; max-width:560px; overflow:hidden; }
+    .modal-header { padding:20px 24px 16px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+    .modal-title { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:700; color:var(--white); text-transform:uppercase; letter-spacing:1px; }
+    .modal-title span { color:var(--royal2); }
+    .modal-close { background:transparent; border:none; color:var(--mid); font-size:22px; cursor:pointer; padding:4px 8px; border-radius:4px; transition:color 0.15s; }
+    .modal-close:hover { color:var(--white); }
+    .modal-body { padding:24px; }
+    .modal-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:10px; }
+
+    .drop-zone {
+      border:2px dashed var(--border);
+      border-radius:8px;
+      padding:40px 20px;
+      text-align:center;
+      cursor:pointer;
+      transition:all 0.2s;
+      margin-bottom:16px;
+    }
+    .drop-zone:hover, .drop-zone.drag-over { border-color:var(--royal); background:rgba(46,109,180,0.06); }
+    .drop-zone-icon { font-size:36px; margin-bottom:10px; }
+    .drop-zone-title { font-family:'Barlow Condensed',sans-serif; font-size:18px; font-weight:700; color:var(--white); margin-bottom:4px; }
+    .drop-zone-sub { font-size:12px; color:var(--mid); }
+    .drop-zone input[type=file] { display:none; }
+
+    .import-status { font-size:13px; color:var(--mid); padding:12px; background:var(--deep); border-radius:6px; border:1px solid var(--border); min-height:48px; display:none; }
+    .import-status.visible { display:block; }
+    .import-status.success { border-color:#1A6640; color:#2ECC71; }
+    .import-status.error { border-color:#7A1A10; color:#E74C3C; }
+    .import-status.loading { color:var(--mid); }
+
+    /* BOTTOM BAR */
+    .bottom-bar { background:var(--navy); border-top:2px solid var(--border); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+    .bottom-quote { font-size:13px; color:var(--mid); font-style:italic; }
+    .bottom-quote strong { color:var(--royal2); font-style:normal; }
+
+    /* RESPONSIVE */
+    @media (max-width:900px) {
+      .header { padding:18px 20px 14px; align-items:stretch; }
+      .header-left { width:100%; }
+      .tabs { width:100%; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; align-self:auto; }
+      .tab { min-height:44px; padding:10px 8px; text-align:center; display:flex; align-items:center; justify-content:center; }
+      .screen { padding:20px; }
+      .amount-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+      .cards-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+      .plans-table { min-width:860px; }
+    }
+    @media (max-width:640px) {
+      .amount-grid, .cards-grid { grid-template-columns:1fr; }
+      .tabs { grid-template-columns:1fr; }
+      .header, .screen, .bottom-bar { padding-left:16px; padding-right:16px; }
+    }
+    .table-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <svg width="58" height="58" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+      <circle cx="32" cy="32" r="30" fill="none" stroke="#2E6DB4" stroke-width="1.5" opacity="0.5"/>
+      <circle cx="32" cy="32" r="25" fill="#060E18" stroke="#1A3A5A" stroke-width="1"/>
+      <path d="M9 39 L11 37 L53 37 L55 39 L51 43 L13 43 Z" fill="#2E6DB4" opacity="0.85"/>
+      <path d="M13 43 L51 43 L53 45 L11 45 Z" fill="#1A3A5A" opacity="0.6"/>
+      <rect x="21" y="31" width="22" height="6" rx="1" fill="#4A6A88"/>
+      <rect x="27" y="24" width="12" height="8" rx="1" fill="#2E6DB4" opacity="0.9"/>
+      <rect x="29" y="26" width="2.5" height="2" rx="0.5" fill="#060E18"/>
+      <rect x="33" y="26" width="2.5" height="2" rx="0.5" fill="#060E18"/>
+      <rect x="38" y="28" width="6" height="5" rx="1" fill="#4A6A88" opacity="0.85"/>
+      <rect x="13" y="33" width="10" height="4" rx="1" fill="#6A8AA8"/>
+      <rect x="8" y="34" width="9" height="1.5" rx="0.5" fill="#A8BFCF"/>
+      <rect x="45" y="34" width="7" height="1.5" rx="0.5" fill="#A8BFCF"/>
+      <line x1="32" y1="24" x2="32" y2="15" stroke="#6A8AA8" stroke-width="1" opacity="0.9"/>
+      <line x1="27" y1="18" x2="37" y2="18" stroke="#6A8AA8" stroke-width="0.8" opacity="0.7"/>
+    </svg>
+    <div>
+      <div class="header-label">Brought to you by Battleship</div>
+      <h1>Field <span>Financing</span></h1>
+      <div class="header-sub">Type in the job amount. See every option that fits.</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('field')">Field View</div>
+    <div class="tab" onclick="switchTab('office')">Office View</div>
+    <div class="tab" onclick="switchTab('setup')">Partner Setup</div>
+  </div>
+</div>
+
+<!-- FIELD VIEW -->
+<div class="screen active" id="screen-field">
+  <div class="amount-block">
+    <div class="amount-label">Job Amounts</div>
+    <div class="amount-hint">Enter job amounts. Tap a slot to see financing options. Hit X to remove unused slots.</div>
+    <div class="amount-grid" id="job-amounts-grid"></div>
+  </div>
+  <div id="results-area">
+    <div class="no-amount-msg"><strong>Select a Job Amount</strong>Enter a dollar amount above to see financing options.</div>
+  </div>
+</div>
+
+<!-- OFFICE VIEW -->
+<div class="screen" id="screen-office">
+  <div class="amount-block">
+    <div class="amount-label">Cost to Company Summary</div>
+    <div class="amount-hint">Dealer fee breakdown across all entered job amounts.</div>
+    <div id="office-summary" class="job-summary">
+      <div class="summary-table-wrap" style="margin-top:0;">
+        <table class="summary-table" id="office-table"></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SETUP VIEW -->
+<div class="screen" id="screen-setup">
+  <div class="setup-header-row">
+    <div class="setup-title">Financing Partners &amp; Plans</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-ghost btn-sm" id="share-setup-btn" onclick="copyTeamSetupLink()">&#128279; Copy Team Link</button>
+      <button class="btn btn-ghost btn-sm" onclick="openImport()">&#8593; Import Rate Sheet</button>
+      <button class="btn btn-primary" onclick="addPartner()">+ Add Partner</button>
+    </div>
+  </div>
+  <div id="partners-list"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="bottom-quote">"The customer doesn't say no to the job. <strong>They say no to the payment.</strong>"</div>
+  <button class="btn btn-ghost btn-sm" onclick="resetAll()">Reset All</button>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Import <span>Rate Sheet</span></div>
+      <button class="modal-close" onclick="closeImport()">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()"
+        ondragover="event.preventDefault(); this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="handleDrop(event)">
+        <div class="drop-zone-icon">&#128196;</div>
+        <div class="drop-zone-title">Drop your rate sheet here</div>
+        <div class="drop-zone-sub">Includes your 2026 rate sheets by default<br>Optional import supports Excel (.xlsx), JSON, CSV, or TXT</div>
+        <input type="file" id="file-input" accept=".json,.csv,.txt,.xlsx" onchange="handleFileSelect(this)">
+      </div>
+      <div class="import-status" id="import-status"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeImport()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// JOB COLORS
+const JOB_COLORS = ['job-0','job-1','job-2','job-3','job-4','job-5'];
+const JOB_COLOR_NAMES = ['#2ECC71','#F5C842','#E74C3C','#A855F7','#F97316','#06B6D4'];
+
+// DATA
+const DEFAULT_PARTNERS = [
+  {
+    "id": "service-finance-2026",
+    "name": "Service Finance",
+    "plans": [
+      {
+        "id": "sf1006",
+        "name": "1006 - 6 Months,DeferredInterestwithMinimumMonthlyPayments",
+        "term": 6,
+        "factor": 0.0,
+        "dealerFee": 3.75,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "6 Months,DeferredInterestwithMinimumMonthlyPayments",
+        "active": true
+      },
+      {
+        "id": "sf1012",
+        "name": "1012 - 12 Months, Deferred Interest with Minimum Monthly Payments",
+        "term": 12,
+        "factor": 0.0,
+        "dealerFee": 3.75,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "12 Months, Deferred Interest with Minimum Monthly Payments",
+        "active": true
+      },
+      {
+        "id": "sf1018",
+        "name": "1018 - 18 Months, Deferred Interest with Minimum Monthly Payments",
+        "term": 18,
+        "factor": 0.0,
+        "dealerFee": 4.75,
+        "minAmt": 1000.0,
+        "maxAmt": 100000.0,
+        "promo": "18 Months, Deferred Interest with Minimum Monthly Payments",
+        "active": true
+      },
+      {
+        "id": "sf1024",
+        "name": "1024 - 24 Months, Deferred Interest with Minimum Monthly Payments",
+        "term": 24,
+        "factor": 0.0,
+        "dealerFee": 7.75,
+        "minAmt": 1000.0,
+        "maxAmt": 100000.0,
+        "promo": "24 Months, Deferred Interest with Minimum Monthly Payments",
+        "active": true
+      },
+      {
+        "id": "sf2006",
+        "name": "2006 - 6 Months, Zero Interest with NO Monthly Payments-Same as Cash",
+        "term": 6,
+        "factor": 0.0,
+        "dealerFee": 2.0,
+        "minAmt": 1000.0,
+        "maxAmt": 100000.0,
+        "promo": "6 Months, Zero Interest with NO Monthly Payments-Same as Cash",
+        "active": true
+      },
+      {
+        "id": "sf2012",
+        "name": "2012 - 12 Months, Zero Interest with NO Monthly Payments- Same as Cash",
+        "term": 12,
+        "factor": 0.0,
+        "dealerFee": 4.85,
+        "minAmt": 1000.0,
+        "maxAmt": 100000.0,
+        "promo": "12 Months, Zero Interest with NO Monthly Payments- Same as Cash",
+        "active": true
+      },
+      {
+        "id": "sf2018",
+        "name": "2018 - 18 Months, Zero Interest with NO Monthly Payments- Same as Cash",
+        "term": 18,
+        "factor": 0.0,
+        "dealerFee": 8.9,
+        "minAmt": 1000.0,
+        "maxAmt": 100000.0,
+        "promo": "18 Months, Zero Interest with NO Monthly Payments- Same as Cash",
+        "active": true
+      },
+      {
+        "id": "sf2024",
+        "name": "2024 - 24 Months, Zero Interest with NO Monthly Payments- Same as Cash",
+        "term": 24,
+        "factor": 0.0,
+        "dealerFee": 11.0,
+        "minAmt": 1000.0,
+        "maxAmt": 100000.0,
+        "promo": "24 Months, Zero Interest with NO Monthly Payments- Same as Cash",
+        "active": true
+      },
+      {
+        "id": "sf3025",
+        "name": "3025 - 25 Months, Zero Interest with 25 Equal Monthly Payments",
+        "term": 25,
+        "factor": 0.0,
+        "dealerFee": 8.5,
+        "minAmt": 1000.0,
+        "maxAmt": 100000.0,
+        "promo": "25 Months, Zero Interest with 25 Equal Monthly Payments",
+        "active": true
+      },
+      {
+        "id": "sf3036",
+        "name": "3036 - 36 Months, Zero Interest with 36 Equal Monthly Payments",
+        "term": 36,
+        "factor": 0.0,
+        "dealerFee": 11.0,
+        "minAmt": 1000.0,
+        "maxAmt": 100000.0,
+        "promo": "36 Months, Zero Interest with 36 Equal Monthly Payments",
+        "active": true
+      },
+      {
+        "id": "sf3048",
+        "name": "3048 - 48 Months, Zero Interest with 48 Equal Monthly Payments",
+        "term": 48,
+        "factor": 0.0,
+        "dealerFee": 12.5,
+        "minAmt": 1000.0,
+        "maxAmt": 100000.0,
+        "promo": "48 Months, Zero Interest with 48 Equal Monthly Payments",
+        "active": true
+      },
+      {
+        "id": "sf3060",
+        "name": "3060 - 60 Months, Zero Interest with 60 Equal Monthly Payments",
+        "term": 60,
+        "factor": 0.0,
+        "dealerFee": 13.4,
+        "minAmt": 1000.0,
+        "maxAmt": 100000.0,
+        "promo": "60 Months, Zero Interest with 60 Equal Monthly Payments",
+        "active": true
+      },
+      {
+        "id": "sf3072",
+        "name": "3072 - 72 Months, Zero Interest with 72 Equal Monthly Payments",
+        "term": 72,
+        "factor": 0.0,
+        "dealerFee": 17.0,
+        "minAmt": 1000.0,
+        "maxAmt": 100000.0,
+        "promo": "72 Months, Zero Interest with 72 Equal Monthly Payments",
+        "active": true
+      },
+      {
+        "id": "sf4398",
+        "name": "4398 - 6.99% APR / 3NINP / 60 Months",
+        "term": 60,
+        "factor": 1.98,
+        "dealerFee": 3.9,
+        "minAmt": 1000.0,
+        "maxAmt": 100000.0,
+        "promo": "3NINP / 60 Months",
+        "active": true
+      },
+      {
+        "id": "sf4316",
+        "name": "4316 - 6.99% APR / 3NINP / 120 Months",
+        "term": 120,
+        "factor": 1.16,
+        "dealerFee": 4.1,
+        "minAmt": 3000.0,
+        "maxAmt": 100000.0,
+        "promo": "3NINP / 120 Months",
+        "active": true
+      },
+      {
+        "id": "sf4301",
+        "name": "4301 - 7.99% APR / 3NINP / 60 Months",
+        "term": 60,
+        "factor": 2.02,
+        "dealerFee": 3.75,
+        "minAmt": 1000.0,
+        "maxAmt": 100000.0,
+        "promo": "3NINP / 60 Months",
+        "active": true
+      },
+      {
+        "id": "sf4321",
+        "name": "4321 - 7.99% APR / 3NINP / 120 Months",
+        "term": 120,
+        "factor": 1.21,
+        "dealerFee": 3.25,
+        "minAmt": 3000.0,
+        "maxAmt": 100000.0,
+        "promo": "3NINP / 120 Months",
+        "active": true
+      },
+      {
+        "id": "sf4312",
+        "name": "4312 - 9.99% APR / 3NINP / 60 Months",
+        "term": 60,
+        "factor": 2.12,
+        "dealerFee": 1.5,
+        "minAmt": 1000.0,
+        "maxAmt": 100000.0,
+        "promo": "3NINP / 60 Months",
+        "active": true
+      },
+      {
+        "id": "sf4332",
+        "name": "4332 - 9.99% APR / 3NINP / 120 Months",
+        "term": 120,
+        "factor": 1.32,
+        "dealerFee": 1.5,
+        "minAmt": 3000.0,
+        "maxAmt": 100000.0,
+        "promo": "3NINP / 120 Months",
+        "active": true
+      },
+      {
+        "id": "sf4612",
+        "name": "4612 - 9.99% APR / 6NINP / 60 Months",
+        "term": 60,
+        "factor": 2.12,
+        "dealerFee": 3.5,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "6NINP / 60 Months",
+        "active": true
+      },
+      {
+        "id": "sf4632",
+        "name": "4632 - 9.99% APR / 6NINP / 120 Months",
+        "term": 120,
+        "factor": 1.32,
+        "dealerFee": 1.5,
+        "minAmt": 3000.0,
+        "maxAmt": 100000.0,
+        "promo": "6NINP / 120 Months",
+        "active": true
+      },
+      {
+        "id": "sf41232",
+        "name": "41232 - 9.99% APR / 12NINP / 120 Months",
+        "term": 120,
+        "factor": 1.32,
+        "dealerFee": 4.35,
+        "minAmt": 1000.0,
+        "maxAmt": 100000.0,
+        "promo": "12NINP / 120 Months",
+        "active": true
+      },
+      {
+        "id": "sf4198",
+        "name": "4198 - 6.99% APR / 60 Months",
+        "term": 60,
+        "factor": 1.98,
+        "dealerFee": 4.75,
+        "minAmt": 1000.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sf4202",
+        "name": "4202 - 7.99% APR / 60 Months",
+        "term": 60,
+        "factor": 2.02,
+        "dealerFee": 4.25,
+        "minAmt": 1000.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sf4212",
+        "name": "4212 - 9.99% APR / 60 Months",
+        "term": 60,
+        "factor": 2.12,
+        "dealerFee": 0.0,
+        "minAmt": 1000.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sf4165",
+        "name": "4165 - 9.99% APR / 85 Months",
+        "term": 85,
+        "factor": 1.65,
+        "dealerFee": 0.0,
+        "minAmt": 1000.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sf4158",
+        "name": "4158 - 9.99% APR / 90 Months",
+        "term": 90,
+        "factor": 1.58,
+        "dealerFee": 0.0,
+        "minAmt": 1000.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sf4150",
+        "name": "4150 - 9.99% APR / 97 Months",
+        "term": 97,
+        "factor": 1.5,
+        "dealerFee": 4.0,
+        "minAmt": 1000.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sf4116",
+        "name": "4116 - 6.99% APR / 120 Months",
+        "term": 120,
+        "factor": 1.16,
+        "dealerFee": 4.75,
+        "minAmt": 3000.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sf4089",
+        "name": "4089 - 6.99% APR / 180 Months",
+        "term": 180,
+        "factor": 0.89,
+        "dealerFee": 4.5,
+        "minAmt": 3000.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sf4121",
+        "name": "4121 - 7.99% APR / 120 Months",
+        "term": 120,
+        "factor": 1.21,
+        "dealerFee": 4.25,
+        "minAmt": 3000.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sf4096",
+        "name": "4096 - 7.99% APR / 180 Months",
+        "term": 180,
+        "factor": 0.96,
+        "dealerFee": 5.0,
+        "minAmt": 3000.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sf4126",
+        "name": "4126 - 8.99% APR / 120 Months",
+        "term": 120,
+        "factor": 1.26,
+        "dealerFee": 0.0,
+        "minAmt": 3000.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sf4132",
+        "name": "4132 - 9.99% APR / 120 Months",
+        "term": 120,
+        "factor": 1.32,
+        "dealerFee": 0.0,
+        "minAmt": 3000.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sf4119",
+        "name": "4119 - 9.99% APR / 144 Months",
+        "term": 144,
+        "factor": 1.19,
+        "dealerFee": 0.0,
+        "minAmt": 3000.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sf4107",
+        "name": "4107 - 9.99% APR / 180 Months",
+        "term": 180,
+        "factor": 1.07,
+        "dealerFee": 0.0,
+        "minAmt": 3000.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      }
+    ]
+  },
+  {
+    "id": "wells-fargo-apex-2026",
+    "name": "Wells Fargo / Trane APEX",
+    "plans": [
+      {
+        "id": "wf0124",
+        "name": "0124 - Special Rate of 0% APR with 24 equal monthly payments",
+        "term": 24,
+        "factor": 0.0,
+        "dealerFee": 10.06,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "0% APR",
+        "active": true
+      },
+      {
+        "id": "wf0136",
+        "name": "0136 - Special Rate of 0% APR with 36 equal monthly payments",
+        "term": 36,
+        "factor": 0.0,
+        "dealerFee": 12.41,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "0% APR",
+        "active": true
+      },
+      {
+        "id": "wf0148",
+        "name": "0148 - Special Rate of 0% APR with 48 equal monthly payments",
+        "term": 48,
+        "factor": 0.0,
+        "dealerFee": 14.18,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "0% APR",
+        "active": true
+      },
+      {
+        "id": "wf0160",
+        "name": "0160 - Special Rate of 0% APR with 60 equal monthly payments (Participating / Non-Participating)",
+        "term": 60,
+        "factor": 0.0,
+        "dealerFee": 8.8,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "0% APR",
+        "active": true
+      },
+      {
+        "id": "wf0172",
+        "name": "0172 - Special Rate of 0% APR with 72 equal monthly payments (Participating / Non-Participating)",
+        "term": 72,
+        "factor": 0.0,
+        "dealerFee": 13.74,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "0% APR",
+        "active": true
+      },
+      {
+        "id": "wf0499",
+        "name": "0499 - Special Rate of 4.99% APR with 48 equal monthly payments (2.33% payment factor)",
+        "term": 48,
+        "factor": 2.33,
+        "dealerFee": 8.47,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "wf0399",
+        "name": "0399 - Special Rate of 3.99% APR with 60 equal monthly payments (1.86% payment factor)",
+        "term": 60,
+        "factor": 1.86,
+        "dealerFee": 9.52,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "wf3693",
+        "name": "3693 - Special Rate of 7.99% APR with 96 equal monthly payments (1.42% payment factor)",
+        "term": 96,
+        "factor": 1.42,
+        "dealerFee": 9.05,
+        "minAmt": 7500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "wf3689",
+        "name": "3689 - Special Rate of 7.99% APR with 120 equal monthly payments (1.22% payment factor)",
+        "term": 120,
+        "factor": 1.22,
+        "dealerFee": 11.05,
+        "minAmt": 7500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "wf3690",
+        "name": "3690 - Special Rate of 9.99% APR with 96 equal monthly payments (1.52% payment factor)",
+        "term": 96,
+        "factor": 1.52,
+        "dealerFee": 3.8,
+        "minAmt": 7500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "wf3692",
+        "name": "3692 - Special Rate of 9.99% APR with 120 equal monthly payments (1.32% payment factor) (Participating / Non-Participating)",
+        "term": 120,
+        "factor": 1.32,
+        "dealerFee": 0.0,
+        "minAmt": 7500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "wf0006",
+        "name": "0006 - No Interest if Paid in Full within 6 Months; regular monthly payments of 3.5% of amount financed ($40 min)",
+        "term": 6,
+        "factor": 3.5,
+        "dealerFee": 2.38,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "No Interest",
+        "active": true
+      },
+      {
+        "id": "wf0012",
+        "name": "0012 - No Interest if Paid in Full within 12 Months; regular monthly payments of 3.5% of amount financed ($40 min)",
+        "term": 12,
+        "factor": 3.5,
+        "dealerFee": 4.6,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "No Interest",
+        "active": true
+      },
+      {
+        "id": "wf0018",
+        "name": "0018 - No Interest if Paid in Full within 18 Months; regular monthly payments of 3.5% of amount financed ($40 min)",
+        "term": 18,
+        "factor": 3.5,
+        "dealerFee": 5.5,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "No Interest",
+        "active": true
+      },
+      {
+        "id": "wf0590",
+        "name": "0590 - Special Rate of 5.90% APR with monthly payments up to 68 months (1.75% payment factor)",
+        "term": 68,
+        "factor": 1.75,
+        "dealerFee": 8.13,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "0% APR",
+        "active": true
+      },
+      {
+        "id": "wf0790",
+        "name": "0790 - Special Rate of 7.90% APR with monthly payments up to 72 months (1.75% payment factor)",
+        "term": 72,
+        "factor": 1.75,
+        "dealerFee": 6.68,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "0% APR",
+        "active": true
+      },
+      {
+        "id": "wf0990",
+        "name": "0990 - Special Rate of 9.90% APR with monthly payments up to 70 months (1.90% payment factor)",
+        "term": 70,
+        "factor": 1.9,
+        "dealerFee": 4.73,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "0% APR",
+        "active": true
+      }
+    ]
+  },
+  {
+    "id": "synchrony-2026",
+    "name": "Synchrony",
+    "plans": [
+      {
+        "id": "sy0951",
+        "name": "0951 - 7.99% APR Until Paid in Full",
+        "term": 0,
+        "factor": 1.5,
+        "dealerFee": 10.2,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sy0952",
+        "name": "0952 - 9.99% APR Until Paid in Full",
+        "term": 0,
+        "factor": 1.5,
+        "dealerFee": 7.6,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sy0930",
+        "name": "0930 - 0% Interest for 25 Months",
+        "term": 25,
+        "factor": 4.0,
+        "dealerFee": 10.85,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "0% Interest for 25 Months",
+        "active": true
+      },
+      {
+        "id": "sy0931",
+        "name": "0931 - 0% Interest for 36 Months",
+        "term": 36,
+        "factor": 2.78,
+        "dealerFee": 13.35,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "0% Interest for 36 Months",
+        "active": true
+      },
+      {
+        "id": "sy0932",
+        "name": "0932 - 0% Interest for 48 Months",
+        "term": 48,
+        "factor": 2.08,
+        "dealerFee": 15.1,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "0% Interest for 48 Months",
+        "active": true
+      },
+      {
+        "id": "sy0933",
+        "name": "0933 - 0% Interest for 60 Months",
+        "term": 60,
+        "factor": 1.67,
+        "dealerFee": 16.85,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "0% Interest for 60 Months",
+        "active": true
+      },
+      {
+        "id": "sy0977",
+        "name": "0977 - 14.99% APR Until Paid in Full",
+        "term": 0,
+        "factor": 2.0,
+        "dealerFee": 0.0,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sy0934",
+        "name": "0934 - 0% Interest for 72 Months",
+        "term": 72,
+        "factor": 1.39,
+        "dealerFee": 23.45,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "0% Interest for 72 Months",
+        "active": true
+      },
+      {
+        "id": "sy0980",
+        "name": "0980 - 5.99% APR Until Paid in Full",
+        "term": 0,
+        "factor": 3.0,
+        "dealerFee": 7.95,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sy0981",
+        "name": "0981 - 7.99% APR Until Paid in Full",
+        "term": 0,
+        "factor": 3.0,
+        "dealerFee": 7.2,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sy0960",
+        "name": "0960 - 3.99% APR Until Paid in Full",
+        "term": 0,
+        "factor": 1.75,
+        "dealerFee": 15.6,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sy0982",
+        "name": "0982 - 9.99% APR Until Paid in Full",
+        "term": 0,
+        "factor": 3.0,
+        "dealerFee": 6.35,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sy0961",
+        "name": "0961 - 5.99% APR Until Paid in Full",
+        "term": 0,
+        "factor": 1.75,
+        "dealerFee": 12.85,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sy0962",
+        "name": "0962 - 7.99% APR Until Paid in Full",
+        "term": 0,
+        "factor": 1.75,
+        "dealerFee": 9.1,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sy0940",
+        "name": "0940 - 3.99% APR Until Paid in Full",
+        "term": 0,
+        "factor": 1.25,
+        "dealerFee": 22.1,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sy0941",
+        "name": "0941 - 5.99% APR Until Paid in Full",
+        "term": 0,
+        "factor": 1.25,
+        "dealerFee": 15.95,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sy0963",
+        "name": "0963 - 9.99% APR Until Paid in Full",
+        "term": 0,
+        "factor": 1.75,
+        "dealerFee": 2.35,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sy0942",
+        "name": "0942 - 7.99% APR Until Paid in Full",
+        "term": 0,
+        "factor": 1.25,
+        "dealerFee": 11.1,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sy0964",
+        "name": "0964 - 10.99% APR Until Paid in Full",
+        "term": 0,
+        "factor": 1.75,
+        "dealerFee": 4.1,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sy0943",
+        "name": "0943 - 9.99% APR Until Paid in Full",
+        "term": 0,
+        "factor": 1.25,
+        "dealerFee": 2.1,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sy0965",
+        "name": "0965 - 11.99% APR Until Paid in Full",
+        "term": 0,
+        "factor": 1.75,
+        "dealerFee": 3.1,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sy0921",
+        "name": "0921 - No Interest if Paid in Full within 9 Months",
+        "term": 9,
+        "factor": 2.5,
+        "dealerFee": 5.45,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "No Interest if Paid in Full within 9 Months",
+        "active": true
+      },
+      {
+        "id": "sy0922",
+        "name": "0922 - No Interest if Paid in Full within 12 Months",
+        "term": 12,
+        "factor": 2.5,
+        "dealerFee": 6.2,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "No Interest if Paid in Full within 12 Months",
+        "active": true
+      },
+      {
+        "id": "sy0923",
+        "name": "0923 - No Interest if Paid in Full within 15 Months",
+        "term": 15,
+        "factor": 2.5,
+        "dealerFee": 6.65,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "No Interest if Paid in Full within 15 Months",
+        "active": true
+      },
+      {
+        "id": "sy0924",
+        "name": "0924 - No Interest if Paid in Full within 18 Months",
+        "term": 18,
+        "factor": 2.5,
+        "dealerFee": 5.65,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "No Interest if Paid in Full within 18 Months",
+        "active": true
+      },
+      {
+        "id": "sy0920",
+        "name": "0920 - No Interest if Paid in Full within 6 Months",
+        "term": 6,
+        "factor": 2.5,
+        "dealerFee": 2.35,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "No Interest if Paid in Full within 6 Months",
+        "active": true
+      },
+      {
+        "id": "sy0990",
+        "name": "0990 - 5.99% APR Until Paid in Full",
+        "term": 0,
+        "factor": 4.0,
+        "dealerFee": 7.2,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sy0991",
+        "name": "0991 - 7.99% APR Until Paid in Full",
+        "term": 0,
+        "factor": 4.0,
+        "dealerFee": 6.95,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sy0970",
+        "name": "0970 - 5.99% APR Until Paid in Full",
+        "term": 0,
+        "factor": 2.0,
+        "dealerFee": 11.1,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sy0992",
+        "name": "0992 - 9.99% APR Until Paid in Full",
+        "term": 0,
+        "factor": 4.0,
+        "dealerFee": 5.45,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sy0971",
+        "name": "0971 - 7.99% APR Until Paid in Full",
+        "term": 0,
+        "factor": 2.0,
+        "dealerFee": 7.95,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sy0950",
+        "name": "0950 - 5.99% APR Until Paid in Full",
+        "term": 0,
+        "factor": 1.5,
+        "dealerFee": 14.6,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      },
+      {
+        "id": "sy0972",
+        "name": "0972 - 9.99% APR Until Paid in Full",
+        "term": 0,
+        "factor": 2.0,
+        "dealerFee": 7.0,
+        "minAmt": 500.0,
+        "maxAmt": 100000.0,
+        "promo": "",
+        "active": true
+      }
+    ]
+  }
+];
+
+let partners = [];
+let jobSlots = [];
+let selectedIndex = 0;
+let currentTab = 'field';
+const STORAGE_PREFIX = 'bs_2026_static_';
+
+async function loadData() {
+  const sharedPartners = await readSharedSetupFromUrl();
+  if (sharedPartners) {
+    partners = sharedPartners;
+    localStorage.setItem(STORAGE_PREFIX + 'partners', JSON.stringify(partners));
+    history.replaceState(null, '', location.pathname + location.search);
+  } else {
+    try { partners = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'partners')) || JSON.parse(JSON.stringify(DEFAULT_PARTNERS)); } catch(e) { partners = JSON.parse(JSON.stringify(DEFAULT_PARTNERS)); }
+  }
+  try {
+    const s = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'slots'));
+    jobSlots = s && s.length ? s : [{amount:'',label:'Job 1'},{amount:'',label:'Job 2'},{amount:'',label:'Job 3'}];
+  } catch(e) { jobSlots = [{amount:'',label:'Job 1'},{amount:'',label:'Job 2'},{amount:'',label:'Job 3'}]; }
+  if (selectedIndex >= jobSlots.length) selectedIndex = 0;
+}
+
+function saveData() {
+  localStorage.setItem(STORAGE_PREFIX + 'partners', JSON.stringify(partners));
+  localStorage.setItem(STORAGE_PREFIX + 'slots', JSON.stringify(jobSlots));
+}
+
+async function copyTeamSetupLink() {
+  const button = document.getElementById('share-setup-btn');
+  const originalText = button.innerHTML;
+  try {
+    if (location.protocol === 'file:') {
+      throw new Error('Open the hosted version before copying a team link.');
+    }
+    const cleanPartners = partners.map(function(partner) {
+      return {
+        id: partner.id,
+        name: partner.name,
+        plans: partner.plans.map(function(plan) {
+          return {
+            id: plan.id,
+            name: plan.name,
+            term: plan.term,
+            factor: plan.factor,
+            dealerFee: plan.dealerFee,
+            minAmt: plan.minAmt,
+            maxAmt: plan.maxAmt,
+            promo: plan.promo || '',
+            active: plan.active !== false
+          };
+        })
+      };
+    });
+    const payload = await encodeSharedSetup(JSON.stringify({version:1, partners:cleanPartners}));
+    const url = location.href.split('#')[0] + '#team-setup=' + payload;
+    await copyText(url);
+    button.innerHTML = '&#10003; Link Copied';
+    setTimeout(function(){ button.innerHTML = originalText; }, 2200);
+  } catch (error) {
+    alert(error.message || 'Could not copy the team link.');
+  }
+}
+
+async function readSharedSetupFromUrl() {
+  if (!location.hash.startsWith('#team-setup=')) return null;
+  try {
+    const payload = location.hash.slice('#team-setup='.length);
+    const data = JSON.parse(await decodeSharedSetup(payload));
+    if (!data || data.version !== 1 || !Array.isArray(data.partners)) throw new Error('Invalid setup');
+    const valid = data.partners.every(function(partner) {
+      return partner && typeof partner.name === 'string' && Array.isArray(partner.plans);
+    });
+    if (!valid) throw new Error('Invalid setup');
+    return data.partners.map(function(partner, pi) {
+      return {
+        id: partner.id || 'shared-p' + pi,
+        name: partner.name,
+        _open: false,
+        plans: partner.plans.map(function(plan, li) {
+          return {
+            id: plan.id || 'shared-pl' + pi + '-' + li,
+            name: String(plan.name || 'Unnamed Plan'),
+            term: Number(plan.term) || 0,
+            factor: Number(plan.factor) || 0,
+            dealerFee: Number(plan.dealerFee) || 0,
+            minAmt: Number(plan.minAmt) || 0,
+            maxAmt: Number(plan.maxAmt) || 0,
+            promo: String(plan.promo || ''),
+            active: plan.active !== false
+          };
+        })
+      };
+    });
+  } catch (error) {
+    alert('This team setup link is damaged or incomplete. Your saved setup will be used instead.');
+    return null;
+  }
+}
+
+async function encodeSharedSetup(text) {
+  const bytes = new TextEncoder().encode(text);
+  if (typeof CompressionStream === 'function') {
+    const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream('gzip'));
+    return 'g.' + bytesToBase64Url(new Uint8Array(await new Response(stream).arrayBuffer()));
+  }
+  return 'r.' + bytesToBase64Url(bytes);
+}
+
+async function decodeSharedSetup(payload) {
+  const mode = payload.slice(0, 2);
+  const bytes = base64UrlToBytes(payload.slice(2));
+  if (mode === 'g.') {
+    if (typeof DecompressionStream !== 'function') throw new Error('Compressed links are not supported by this browser');
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return new TextDecoder().decode(await new Response(stream).arrayBuffer());
+  }
+  if (mode === 'r.') return new TextDecoder().decode(bytes);
+  throw new Error('Unknown setup format');
+}
+
+function bytesToBase64Url(bytes) {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function base64UrlToBytes(value) {
+  const padded = value.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((value.length + 3) % 4);
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+async function copyText(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const area = document.createElement('textarea');
+  area.value = text;
+  area.style.position = 'fixed';
+  area.style.opacity = '0';
+  document.body.appendChild(area);
+  area.select();
+  const copied = document.execCommand('copy');
+  area.remove();
+  if (!copied) throw new Error('Could not copy the link. Please try again.');
+}
+
+// CALC
+function calcPayment(plan, amount) {
+  if (plan.factor === 0) return plan.term > 0 ? amount / plan.term : amount;
+  return (amount * plan.factor) / 100;
+}
+function calcDealerCost(plan, amount) { return amount * (plan.dealerFee / 100); }
+function isEligible(plan, amount) {
+  if (!plan.active) return false;
+  if (amount < plan.minAmt) return false;
+  if (plan.maxAmt > 0 && amount > plan.maxAmt) return false;
+  return true;
+}
+function ineligibleReason(plan, amount) {
+  if (!plan.active) return 'Plan inactive';
+  if (amount < plan.minAmt) return 'Minimum $' + plan.minAmt.toLocaleString() + ' — not eligible';
+  if (plan.maxAmt > 0 && amount > plan.maxAmt) return 'Maximum $' + plan.maxAmt.toLocaleString() + ' — not eligible';
+  return '';
+}
+
+// Get lowest payment for a slot
+function getLowestPayment(slotIndex) {
+  const slot = jobSlots[slotIndex];
+  if (!slot) return null;
+  const amount = parseFloat(slot.amount);
+  if (isNaN(amount) || amount <= 0) return null;
+  let lowest = Infinity;
+  partners.forEach(function(p) {
+    p.plans.forEach(function(pl) {
+      if (isEligible(pl, amount)) {
+        const pay = calcPayment(pl, amount);
+        if (pay < lowest) lowest = pay;
+      }
+    });
+  });
+  return lowest === Infinity ? null : lowest;
+}
+
+// FIELD VIEW
+function renderAmountGrid() {
+  const grid = document.getElementById('job-amounts-grid');
+  if (!grid) return;
+
+  let html = jobSlots.map(function(slot, i) {
+    const colorClass = JOB_COLORS[i] || JOB_COLORS[5];
+    const active = i === selectedIndex ? 'active' : '';
+    const val = slot.amount || '';
+    const lbl = slot.label || ('Job ' + (i + 1));
+    const lowest = getLowestPayment(i);
+    const synopsisHtml = lowest !== null
+      ? '<div class="slot-synopsis ' + colorClass + '"><span class="slot-synopsis-label">As low as</span>$' + Math.round(lowest).toLocaleString() + '/mo</div>'
+      : '<div class="slot-synopsis" style="color:var(--gray);font-size:11px;padding:6px 10px 10px;">Enter amount to see options</div>';
+
+    return '<div class="amount-cell ' + colorClass + ' ' + active + '" onclick="selectSlot(' + i + ')" id="cell-' + i + '">' +
+      '<div class="amount-cell-header">' +
+        '<input class="job-label-input" type="text" value="' + lbl.replace(/"/g,'&quot;') + '" placeholder="Job Label" ' +
+          'oninput="updateLabel(' + i + ', this.value)" onblur="onLabelBlur(' + i + ')" onclick="event.stopPropagation();">' +
+        '<button class="delete-job-btn" onclick="event.stopPropagation(); deleteSlot(' + i + ')" title="Remove">&#10005;</button>' +
+      '</div>' +
+      '<div class="amount-cell-value">' +
+        (i === selectedIndex
+          ? '<input type="number" id="amt-' + i + '" value="' + val + '" placeholder="0" min="0" oninput="updateAmount(' + i + ', this.value)" onblur="onAmountBlur(' + i + ')" onclick="event.stopPropagation();">'
+          : '<div class="amount-hidden">' + (val ? '$' + parseFloat(val).toLocaleString() : 'Tap to enter') + '</div>') +
+      '</div>' +
+      synopsisHtml +
+    '</div>';
+  }).join('');
+
+  if (jobSlots.length < 6) {
+    html += '<div class="add-job-btn" onclick="addSlot()">+ Add Job</div>';
+  }
+
+  grid.innerHTML = html;
+}
+
+function selectSlot(i) {
+  selectedIndex = i;
+  renderAmountGrid();
+  renderCards();
+  renderOfficeSummary();
+  // Do not auto-focus -- let the user tap the input themselves
+}
+
+function updateAmount(i, val) {
+  jobSlots[i].amount = val;
+  saveData();
+  // No rendering while typing -- any DOM change will steal focus
+}
+
+function onAmountBlur(i) {
+  renderAmountGrid();
+  renderCards();
+  renderOfficeSummary();
+}
+
+function updateLabel(i, val) {
+  jobSlots[i].label = val || ('Job ' + (i + 1));
+  saveData();
+}
+
+function onLabelBlur(i) {
+  renderAmountGrid();
+  renderOfficeSummary();
+}
+
+function deleteSlot(i) {
+  if (jobSlots.length === 1) { alert('You need at least one job slot.'); return; }
+  jobSlots.splice(i, 1);
+  if (selectedIndex >= jobSlots.length) selectedIndex = jobSlots.length - 1;
+  saveData(); renderAmountGrid(); renderCards(); renderOfficeSummary();
+}
+
+function addSlot() {
+  if (jobSlots.length >= 6) return;
+  jobSlots.push({ amount:'', label:'Job ' + (jobSlots.length + 1) });
+  selectedIndex = jobSlots.length - 1;
+  saveData(); renderAmountGrid(); renderCards(); renderOfficeSummary();
+}
+
+function renderCards() {
+  const slot = jobSlots[selectedIndex];
+  const amount = slot ? parseFloat(slot.amount) : NaN;
+  const area = document.getElementById('results-area');
+  const colorIdx = selectedIndex < JOB_COLORS.length ? selectedIndex : JOB_COLORS.length - 1;
+
+  if (!slot || isNaN(amount) || amount <= 0) {
+    area.innerHTML = '<div class="no-amount-msg"><strong>Select a Job Amount</strong>Enter a dollar amount above to see financing options.</div>';
+    return;
+  }
+
+  let allPlans = [];
+  partners.forEach(function(p) {
+    p.plans.forEach(function(pl) { allPlans.push({ partner:p.name, plan:pl }); });
+  });
+
+  if (allPlans.length === 0) {
+    area.innerHTML = '<div class="no-amount-msg"><strong>No Plans Configured</strong>Go to Partner Setup to add financing partners and plans.</div>';
+    return;
+  }
+
+  const eligible = allPlans.filter(function(x) { return isEligible(x.plan, amount); });
+  const ineligible = allPlans.filter(function(x) { return !isEligible(x.plan, amount); });
+
+  // Find lowest payment plan
+  let lowestPayment = Infinity, lowestPlanId = null;
+  eligible.forEach(function(x) {
+    const p = calcPayment(x.plan, amount);
+    if (p < lowestPayment) { lowestPayment = p; lowestPlanId = x.plan.id; }
+  });
+
+  let html = '<div class="results-label">Selected: ' + (slot.label || 'Job') + '<span>$' + amount.toLocaleString() + '</span></div>';
+
+  if (eligible.length > 0) {
+    const sorted = eligible.slice().sort(function(a,b){ return calcPayment(a.plan,amount) - calcPayment(b.plan,amount); });
+    html += '<div class="cards-grid">';
+    sorted.forEach(function(x) {
+      const payment = calcPayment(x.plan, amount);
+      const isLowest = x.plan.id === lowestPlanId;
+      html += buildCard(x.partner, x.plan, payment, isLowest, true, '', colorIdx);
+    });
+    html += '</div>';
+  } else {
+    html += '<div class="no-amount-msg"><strong>No Eligible Plans</strong>No options match this amount.</div>';
+  }
+
+  if (ineligible.length > 0) {
+    html += '<div class="results-label" style="margin-top:28px;">Not Available<span>' + ineligible.length + ' plan' + (ineligible.length !== 1 ? 's':'') + '</span></div>';
+    html += '<div class="cards-grid">';
+    ineligible.forEach(function(x) {
+      html += buildCard(x.partner, x.plan, 0, false, false, ineligibleReason(x.plan, amount), colorIdx);
+    });
+    html += '</div>';
+  }
+
+  area.innerHTML = html;
+}
+
+function buildCard(partnerName, plan, payment, isLowest, eligible, reason, colorIdx) {
+  const promoTag = plan.promo ? '<div class="card-tag promo">' + plan.promo + '</div>' : '';
+  const paymentStr = eligible ? '$' + Math.round(payment).toLocaleString() : '--';
+  const lowestClass = isLowest ? ' lowest-j' + colorIdx : '';
+  const lowestBadge = isLowest ? '<div class="lowest-badge lj' + colorIdx + '">&#9660; Lowest Payment</div>' : '';
+  const termLabel = plan.term > 0 ? plan.term + ' months' : 'variable term';
+
+  // Field view: NO cost to company shown
+  return '<div class="plan-card' + (eligible ? ' eligible' : ' ineligible') + lowestClass + '">' +
+    lowestBadge + promoTag +
+    '<div class="card-partner">' + partnerName + '</div>' +
+    '<div class="card-plan-name">' + plan.name + '</div>' +
+    '<div class="card-payment">' +
+      '<div class="card-payment-num">' + paymentStr + '</div>' +
+      '<div class="card-payment-label">/mo<br>' + termLabel + '</div>' +
+    '</div>' +
+    (!eligible ? '<div class="card-ineligible-reason">' + reason + '</div>' : '') +
+  '</div>';
+}
+
+// OFFICE VIEW
+function renderOfficeSummary() {
+  const table = document.getElementById('office-table');
+  if (!table) return;
+
+  const filled = jobSlots.filter(function(s){ const a=parseFloat(s.amount); return !isNaN(a)&&a>0; });
+  if (filled.length === 0) {
+    table.innerHTML = '<thead><tr><th>No job amounts entered yet</th></tr></thead><tbody></tbody>';
+    return;
+  }
+
+  const headers = jobSlots.map(function(s,i){
+    const a = parseFloat(s.amount);
+    const display = !isNaN(a)&&a>0 ? '$'+a.toLocaleString() : 'Empty';
+    const activeClass = i===selectedIndex ? ' active-col' : '';
+    const color = JOB_COLOR_NAMES[i] || JOB_COLOR_NAMES[5];
+    return '<th class="' + activeClass + '" style="color:' + color + '">' + (s.label||'Job '+(i+1)) + '<br><span style="font-size:11px;color:var(--mid);font-weight:500;">' + display + '</span></th>';
+  }).join('');
+
+  let rows = '';
+  partners.forEach(function(p) {
+    rows += '<tr class="partner-row"><td colspan="' + (jobSlots.length+1) + '">' + p.name + '</td></tr>';
+    p.plans.forEach(function(plan) {
+      const cells = jobSlots.map(function(s,i){
+        const a = parseFloat(s.amount);
+        const activeClass = i===selectedIndex ? ' active-col':'';
+        if (isNaN(a)||a<=0||!isEligible(plan,a)) return '<td class="empty'+activeClass+'">-</td>';
+        return '<td class="'+activeClass+'">$'+Math.round(calcDealerCost(plan,a)).toLocaleString()+'</td>';
+      }).join('');
+      rows += '<tr><td>' + plan.name + '</td>' + cells + '</tr>';
+    });
+  });
+
+  table.innerHTML = '<thead><tr><th>Plan</th>' + headers + '</tr></thead><tbody>' + rows + '</tbody>';
+}
+
+// SETUP
+function renderSetup() {
+  const list = document.getElementById('partners-list');
+  if (partners.length === 0) {
+    list.innerHTML = '<div style="color:var(--mid);text-align:center;padding:40px;">No partners yet. Click + Add Partner to get started.</div>';
+    return;
+  }
+  list.innerHTML = partners.map(function(p,pi){ return buildPartnerBlock(p,pi); }).join('');
+}
+
+function buildPartnerBlock(p, pi) {
+  const planRows = p.plans.map(function(pl,li){ return buildPlanRow(pl,pi,li); }).join('');
+  const openClass = p._open ? 'open' : '';
+  return '<div class="partner-block" id="partner-block-'+pi+'">' +
+    '<div class="partner-header" onclick="togglePartner('+pi+')">' +
+      '<div class="partner-header-left">' +
+        '<div class="partner-toggle '+openClass+'" id="ptoggle-'+pi+'">&#9658;</div>' +
+        '<div><div class="partner-name-display">'+p.name+'</div>' +
+        '<div class="partner-plan-count">'+p.plans.length+' plan'+(p.plans.length!==1?'s':'')+'</div></div>' +
+      '</div>' +
+      '<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();removePartner('+pi+')">Remove</button>' +
+    '</div>' +
+    '<div class="partner-body '+openClass+'" id="pbody-'+pi+'">' +
+      '<div class="partner-name-row">' +
+        '<span class="field-label-s">Partner Name</span>' +
+        '<input class="text-input" value="'+p.name+'" oninput="updatePartnerName('+pi+',this.value)" style="flex:1;max-width:280px;">' +
+      '</div>' +
+      '<div class="table-scroll">' +
+        '<table class="plans-table"><thead><tr>' +
+          '<th>Plan Name</th><th>Term (mo)</th>' +
+          '<th>Pay Factor<br><span style="font-weight:400;font-size:9px;">per $100 (0=SAC)</span></th>' +
+          '<th>Dealer Fee %</th><th>Min $</th><th>Max $</th><th>Promo Label</th><th>Active</th><th></th>' +
+        '</tr></thead><tbody id="plans-tbody-'+pi+'">'+planRows+'</tbody></table>' +
+      '</div>' +
+      '<button class="btn btn-ghost btn-sm" onclick="addPlan('+pi+')">+ Add Plan</button>' +
+    '</div>' +
+  '</div>';
+}
+
+function buildPlanRow(pl, pi, li) {
+  return '<tr id="plan-row-'+pi+'-'+li+'">' +
+    '<td><input class="plan-input wide" value="'+pl.name.replace(/"/g,'&quot;')+'" oninput="updatePlan('+pi+','+li+',\'name\',this.value)"></td>' +
+    '<td><input class="plan-input narrow" type="number" value="'+pl.term+'" min="1" oninput="updatePlan('+pi+','+li+',\'term\',parseFloat(this.value)||0)"></td>' +
+    '<td><input class="plan-input narrow" type="number" step="0.0001" value="'+pl.factor+'" min="0" oninput="updatePlan('+pi+','+li+',\'factor\',parseFloat(this.value)||0)"></td>' +
+    '<td><input class="plan-input narrow" type="number" step="0.1" value="'+pl.dealerFee+'" min="0" oninput="updatePlan('+pi+','+li+',\'dealerFee\',parseFloat(this.value)||0)"></td>' +
+    '<td><input class="plan-input narrow" type="number" value="'+pl.minAmt+'" min="0" oninput="updatePlan('+pi+','+li+',\'minAmt\',parseFloat(this.value)||0)"></td>' +
+    '<td><input class="plan-input narrow" type="number" value="'+pl.maxAmt+'" min="0" oninput="updatePlan('+pi+','+li+',\'maxAmt\',parseFloat(this.value)||0)"></td>' +
+    '<td><input class="plan-input wide" value="'+(pl.promo||'').replace(/"/g,'&quot;')+'" placeholder="Optional" oninput="updatePlan('+pi+','+li+',\'promo\',this.value)"></td>' +
+    '<td><label class="toggle"><input type="checkbox" '+(pl.active?'checked':'')+' onchange="updatePlan('+pi+','+li+',\'active\',this.checked)"><span class="toggle-slider"></span></label></td>' +
+    '<td><button class="btn btn-danger" style="padding:5px 10px;font-size:11px;" onclick="removePlan('+pi+','+li+')">&#10005;</button></td>' +
+  '</tr>';
+}
+
+function togglePartner(pi) { partners[pi]._open=!partners[pi]._open; renderSetup(); }
+function updatePartnerName(pi,val) { partners[pi].name=val; saveData(); const el=document.querySelector('#partner-block-'+pi+' .partner-name-display'); if(el) el.textContent=val; }
+function updatePlan(pi,li,field,val) { partners[pi].plans[li][field]=val; saveData(); }
+function addPartner() { partners.push({id:'p'+Date.now(),name:'New Partner',_open:true,plans:[]}); saveData(); renderSetup(); }
+function removePartner(pi) { if(!confirm('Remove "'+partners[pi].name+'" and all its plans?')) return; partners.splice(pi,1); saveData(); renderSetup(); }
+function addPlan(pi) { partners[pi].plans.push({id:'pl'+Date.now(),name:'New Plan',term:12,factor:0,dealerFee:0,minAmt:500,maxAmt:100000,promo:'',active:true}); saveData(); renderSetup(); }
+function removePlan(pi,li) { partners[pi].plans.splice(li,1); saveData(); renderSetup(); }
+
+// TABS
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  document.getElementById('screen-'+tab).classList.add('active');
+  document.querySelectorAll('.tab').forEach(function(t){
+    if(t.textContent.toLowerCase().includes(tab==='field'?'field':tab==='office'?'office':'partner')) t.classList.add('active');
+  });
+  if(tab==='setup') renderSetup();
+  if(tab==='field'){renderAmountGrid();renderCards();}
+  if(tab==='office') renderOfficeSummary();
+}
+
+// RESET
+function resetAll() {
+  const msg = currentTab==='setup' ? 'Reset all partners and plans to defaults?' : 'Clear all job amounts?';
+  if(!confirm(msg)) return;
+  if(currentTab==='setup'){partners=JSON.parse(JSON.stringify(DEFAULT_PARTNERS));saveData();renderSetup();}
+  else{jobSlots=[{amount:'',label:'Job 1'},{amount:'',label:'Job 2'},{amount:'',label:'Job 3'}];selectedIndex=0;saveData();renderAmountGrid();renderCards();renderOfficeSummary();}
+}
+
+// IMPORT MODAL
+function openImport() {
+  document.getElementById('import-modal').classList.add('open');
+  setImportStatus('', '');
+}
+
+function closeImport() {
+  document.getElementById('import-modal').classList.remove('open');
+  document.getElementById('file-input').value = '';
+}
+
+function setImportStatus(msg, type) {
+  const el = document.getElementById('import-status');
+  if (!msg) { el.classList.remove('visible','success','error','loading'); el.textContent=''; return; }
+  el.classList.add('visible');
+  el.classList.remove('success','error','loading');
+  if (type) el.classList.add(type);
+  el.textContent = msg;
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+
+function handleFileSelect(input) {
+  const file = input.files[0];
+  if (file) processFile(file);
+}
+
+async function processFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  setImportStatus('Reading file...', 'loading');
+
+  try {
+    let parsed;
+
+    if (['json','csv','txt'].includes(ext)) {
+      const text = await fileToText(file);
+      parsed = ext === 'json' ? parseImportJson(text) : parsePlanText(text, fileNameWithoutExt(file.name));
+    } else if (ext === 'xlsx') {
+      parsed = await parseXlsxFile(file);
+    } else if (['pdf','xls','jpg','jpeg','png','webp'].includes(ext)) {
+      setImportStatus('This standalone version supports .xlsx, JSON, CSV, and TXT imports. PDF and image reading were left out so this can be hosted as a simple link.', 'error');
+      return;
+    } else {
+      setImportStatus('Unsupported file type. Upload .xlsx, JSON, CSV, or TXT for this local test version.', 'error');
+      return;
+    }
+
+    if (!parsed.partnerName || !parsed.plans || !Array.isArray(parsed.plans)) {
+      setImportStatus('No financing plans found. Use columns like partner, plan/name, term, factor, dealerFee, minAmt, maxAmt, and promo.', 'error');
+      return;
+    }
+
+    // Find or create partner
+    const pName = parsed.partnerName.trim();
+    let partnerIndex = partners.findIndex(function(p){ return p.name.toLowerCase() === pName.toLowerCase(); });
+    if (partnerIndex === -1) {
+      partners.push({ id:'p'+Date.now(), name:pName, _open:true, plans:[] });
+      partnerIndex = partners.length - 1;
+    }
+
+    let added = 0;
+    parsed.plans.forEach(function(plan) {
+      if (!plan.name || !plan.term) return;
+      partners[partnerIndex].plans.push({
+        id: 'imp'+Date.now()+Math.random(),
+        name: plan.name || 'Imported Plan',
+        term: parseInt(plan.term) || 12,
+        factor: parseFloat(plan.factor) || 0,
+        dealerFee: parseFloat(plan.dealerFee) || 0,
+        minAmt: parseFloat(plan.minAmt) || 500,
+        maxAmt: parseFloat(plan.maxAmt) || 100000,
+        promo: plan.promo || '',
+        active: true
+      });
+      added++;
+    });
+
+    saveData();
+    partners[partnerIndex]._open = true;
+
+    setImportStatus('Done. Added ' + added + ' plan' + (added!==1?'s':'') + ' to ' + pName + '. Go to Partner Setup to review and adjust.', 'success');
+    renderSetup();
+    renderAmountGrid();
+    renderCards();
+
+  } catch(err) {
+    setImportStatus('Something went wrong: ' + err.message, 'error');
+  }
+}
+
+function parseImportJson(text) {
+  const clean = text.replace(/```json|```/g, '').trim();
+  return JSON.parse(clean);
+}
+
+async function parseWithLocalImportHelper(file) {
+  try {
+    setImportStatus('Reading rate sheet with local helper...', 'loading');
+    const body = new FormData();
+    body.append('file', file);
+
+    const response = await fetch('http://127.0.0.1:8010/import-rate-sheet', {
+      method: 'POST',
+      body: body
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(function(){ return {}; });
+      throw new Error(errorData.error || 'Local helper could not read that file.');
+    }
+
+    return await response.json();
+  } catch (err) {
+    console.warn('Local import helper unavailable:', err);
+    return null;
+  }
+}
+
+function parsePlanText(text, fallbackPartnerName) {
+  const rows = text.trim().split(/\r?\n/).filter(function(row){ return row.trim(); });
+  if (rows.length < 2) throw new Error('No rows found.');
+
+  const delimiter = rows[0].includes('\t') ? '\t' : ',';
+  return parsePlanRows(rows.map(function(row){ return splitDelimitedRow(row, delimiter); }), fallbackPartnerName || 'Imported Partner');
+}
+
+function parsePlanRows(rows, fallbackPartnerName) {
+  const headerRowIndex = findHeaderRow(rows);
+  if (headerRowIndex === -1) {
+    throw new Error('Missing plan/name or term column.');
+  }
+
+  const headers = rows[headerRowIndex].map(normalizeHeader);
+  const partnerIndex = headers.findIndex(function(h){ return h === 'partner' || h === 'partnername' || h === 'lender'; });
+  const nameIndex = headers.findIndex(function(h){ return h === 'plan' || h === 'planname' || h === 'name' || h === 'description'; });
+  const termIndex = headers.findIndex(function(h){ return h === 'term' || h === 'months' || h === 'termmonths'; });
+  const factorIndex = headers.findIndex(function(h){ return h === 'factor' || h === 'paymentfactor' || h === 'payfactor'; });
+  const feeIndex = headers.findIndex(function(h){ return h === 'dealerfee' || h === 'dealerfeepercent' || h === 'fee'; });
+  const minIndex = headers.findIndex(function(h){ return h === 'min' || h === 'minamt' || h === 'minimum' || h === 'minimumamount'; });
+  const maxIndex = headers.findIndex(function(h){ return h === 'max' || h === 'maxamt' || h === 'maximum' || h === 'maximumamount'; });
+  const promoIndex = headers.findIndex(function(h){ return h === 'promo' || h === 'promotion' || h === 'promolabel'; });
+
+  const plans = [];
+  let partnerName = '';
+
+  rows.slice(headerRowIndex + 1).forEach(function(cols) {
+    const planName = (cols[nameIndex] || '').trim();
+    const term = cleanNumber(cols[termIndex]);
+    if (!planName || !term) return;
+
+    if (!partnerName && partnerIndex !== -1) partnerName = (cols[partnerIndex] || '').trim();
+    plans.push({
+      name: planName,
+      term: term,
+      factor: factorIndex === -1 ? 0 : cleanNumber(cols[factorIndex]),
+      dealerFee: feeIndex === -1 ? 0 : cleanNumber(cols[feeIndex]),
+      minAmt: minIndex === -1 ? 500 : cleanNumber(cols[minIndex]) || 500,
+      maxAmt: maxIndex === -1 ? 100000 : cleanNumber(cols[maxIndex]) || 100000,
+      promo: promoIndex === -1 ? '' : (cols[promoIndex] || '').trim()
+    });
+  });
+
+  return { partnerName: partnerName || fallbackPartnerName || 'Imported Partner', plans: plans };
+}
+
+function findHeaderRow(rows) {
+  for (let i = 0; i < rows.length; i++) {
+    const headers = rows[i].map(normalizeHeader);
+    const hasPlan = headers.some(function(h){ return h === 'plan' || h === 'planname' || h === 'name' || h === 'description'; });
+    const hasTerm = headers.some(function(h){ return h === 'term' || h === 'months' || h === 'termmonths'; });
+    if (hasPlan && hasTerm) return i;
+  }
+  return -1;
+}
+
+function normalizeHeader(value) {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function cleanNumber(value) {
+  const cleaned = String(value || '').replace(/[$,%\s]/g, '');
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? 0 : num;
+}
+
+function splitDelimitedRow(row, delimiter) {
+  if (delimiter === '\t') return row.split('\t');
+  const out = [];
+  let current = '';
+  let quoted = false;
+
+  for (let i = 0; i < row.length; i++) {
+    const ch = row[i];
+    const next = row[i + 1];
+    if (ch === '"' && quoted && next === '"') {
+      current += '"';
+      i++;
+    } else if (ch === '"') {
+      quoted = !quoted;
+    } else if (ch === ',' && !quoted) {
+      out.push(current);
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  out.push(current);
+  return out;
+}
+
+async function parseXlsxFile(file) {
+  if (typeof DecompressionStream === 'undefined') {
+    throw new Error('This browser cannot decompress .xlsx files locally. Try CSV or use a newer browser.');
+  }
+
+  const zip = await readZipEntries(await fileToArrayBuffer(file));
+  const workbookXml = await zipText(zip, 'xl/workbook.xml');
+  const workbookRelsXml = await zipText(zip, 'xl/_rels/workbook.xml.rels');
+  const sheetPath = getFirstWorksheetPath(workbookXml, workbookRelsXml);
+  const sheetXml = await zipText(zip, sheetPath);
+  const sharedStringsXml = zip['xl/sharedStrings.xml'] ? await zipText(zip, 'xl/sharedStrings.xml') : '';
+  const rows = worksheetXmlToRows(sheetXml, sharedStringsXml);
+  return parsePlanRows(rows, fileNameWithoutExt(file.name));
+}
+
+async function readZipEntries(buffer) {
+  const bytes = new Uint8Array(buffer);
+  const eocdOffset = findEndOfCentralDirectory(bytes);
+  if (eocdOffset === -1) throw new Error('Could not read this .xlsx file.');
+
+  const entryCount = readUInt16(bytes, eocdOffset + 10);
+  let centralOffset = readUInt32(bytes, eocdOffset + 16);
+  const entries = {};
+
+  for (let i = 0; i < entryCount; i++) {
+    if (readUInt32(bytes, centralOffset) !== 0x02014b50) break;
+
+    const method = readUInt16(bytes, centralOffset + 10);
+    const compressedSize = readUInt32(bytes, centralOffset + 20);
+    const fileNameLength = readUInt16(bytes, centralOffset + 28);
+    const extraLength = readUInt16(bytes, centralOffset + 30);
+    const commentLength = readUInt16(bytes, centralOffset + 32);
+    const localOffset = readUInt32(bytes, centralOffset + 42);
+    const fileName = decodeBytes(bytes.slice(centralOffset + 46, centralOffset + 46 + fileNameLength));
+
+    const localNameLength = readUInt16(bytes, localOffset + 26);
+    const localExtraLength = readUInt16(bytes, localOffset + 28);
+    const dataStart = localOffset + 30 + localNameLength + localExtraLength;
+    const compressed = bytes.slice(dataStart, dataStart + compressedSize);
+
+    entries[fileName] = {
+      method: method,
+      compressed: compressed
+    };
+
+    centralOffset += 46 + fileNameLength + extraLength + commentLength;
+  }
+
+  return entries;
+}
+
+async function zipText(entries, path) {
+  const entry = entries[path];
+  if (!entry) throw new Error('Missing ' + path + ' in the .xlsx file.');
+
+  let data;
+  if (entry.method === 0) {
+    data = entry.compressed;
+  } else if (entry.method === 8) {
+    const stream = new Blob([entry.compressed]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    data = new Uint8Array(await new Response(stream).arrayBuffer());
+  } else {
+    throw new Error('Unsupported .xlsx compression method.');
+  }
+  return new TextDecoder('utf-8').decode(data);
+}
+
+function getFirstWorksheetPath(workbookXml, relsXml) {
+  const workbook = new DOMParser().parseFromString(workbookXml, 'application/xml');
+  const rels = new DOMParser().parseFromString(relsXml, 'application/xml');
+  const firstSheet = workbook.querySelector('sheet');
+  if (!firstSheet) throw new Error('No worksheet found in the .xlsx file.');
+
+  const relId = firstSheet.getAttribute('r:id');
+  const rel = Array.from(rels.querySelectorAll('Relationship')).find(function(item){ return item.getAttribute('Id') === relId; });
+  const target = rel ? rel.getAttribute('Target') : 'worksheets/sheet1.xml';
+  const cleanTarget = target.replace(/^\//, '');
+  return cleanTarget.indexOf('xl/') === 0 ? cleanTarget : 'xl/' + cleanTarget;
+}
+
+function worksheetXmlToRows(sheetXml, sharedStringsXml) {
+  const sharedStrings = parseSharedStrings(sharedStringsXml);
+  const doc = new DOMParser().parseFromString(sheetXml, 'application/xml');
+  const rows = [];
+
+  Array.from(doc.querySelectorAll('sheetData row')).forEach(function(rowNode) {
+    const row = [];
+    Array.from(rowNode.querySelectorAll('c')).forEach(function(cell) {
+      const ref = cell.getAttribute('r') || '';
+      const colIndex = columnNameToIndex(ref.replace(/[0-9]/g, ''));
+      row[colIndex] = getCellValue(cell, sharedStrings);
+    });
+    rows.push(row.map(function(value){ return value || ''; }));
+  });
+
+  return rows;
+}
+
+function parseSharedStrings(xml) {
+  if (!xml) return [];
+  const doc = new DOMParser().parseFromString(xml, 'application/xml');
+  return Array.from(doc.querySelectorAll('si')).map(function(item) {
+    return Array.from(item.querySelectorAll('t')).map(function(t){ return t.textContent || ''; }).join('');
+  });
+}
+
+function getCellValue(cell, sharedStrings) {
+  const type = cell.getAttribute('t');
+  if (type === 's') {
+    const idx = parseInt((cell.querySelector('v') || {}).textContent, 10);
+    return sharedStrings[idx] || '';
+  }
+  if (type === 'inlineStr') {
+    return Array.from(cell.querySelectorAll('t')).map(function(t){ return t.textContent || ''; }).join('');
+  }
+  const valueNode = cell.querySelector('v');
+  return valueNode ? valueNode.textContent : '';
+}
+
+function columnNameToIndex(name) {
+  let index = 0;
+  for (let i = 0; i < name.length; i++) {
+    index = index * 26 + name.charCodeAt(i) - 64;
+  }
+  return Math.max(index - 1, 0);
+}
+
+function findEndOfCentralDirectory(bytes) {
+  for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 66000); i--) {
+    if (readUInt32(bytes, i) === 0x06054b50) return i;
+  }
+  return -1;
+}
+
+function readUInt16(bytes, offset) {
+  return bytes[offset] | (bytes[offset + 1] << 8);
+}
+
+function readUInt32(bytes, offset) {
+  return (bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24)) >>> 0;
+}
+
+function decodeBytes(bytes) {
+  return new TextDecoder('utf-8').decode(bytes);
+}
+
+function fileNameWithoutExt(name) {
+  return String(name || 'Imported Partner').replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim() || 'Imported Partner';
+}
+
+const IMPORT_PROMPT = `You are reading a financing rate sheet from a lending partner (such as Wells Fargo, Service Finance, Synchrony, GreenSky, or similar).
+
+Extract all financing plans you can find and return ONLY a JSON object with this exact structure — no explanation, no markdown, just the raw JSON:
+
+{
+  "partnerName": "Name of the financing company",
+  "plans": [
+    {
+      "name": "Plan name or description",
+      "term": 60,
+      "factor": 2.1217,
+      "dealerFee": 3.5,
+      "minAmt": 500,
+      "maxAmt": 100000,
+      "promo": "Promotional label if any (e.g. 0% for 12 months)"
+    }
+  ]
+}
+
+Rules:
+- "term" is the number of months
+- "factor" is the monthly payment factor per $100 financed. If the plan is Same As Cash or deferred interest with 0% APR, set factor to 0 and calculate payment by dividing amount by term.
+- "dealerFee" is the dealer fee percentage. If not shown, set to 0.
+- "minAmt" and "maxAmt" are the minimum and maximum job amounts in dollars. If not specified, use 500 and 100000.
+- "promo" is a short label for promotional terms (e.g. "0% for 18 months", "6 Mo No Payment"). Leave empty string if none.
+- Return ALL plans you can find on the document.
+- Return ONLY the JSON. No other text.`;
+
+function fileToBase64(file) {
+  return new Promise(function(resolve, reject) {
+    const reader = new FileReader();
+    reader.onload = function(){ resolve(reader.result); };
+    reader.onerror = function(){ reject(new Error('File read failed')); };
+    reader.readAsDataURL(file);
+  });
+}
+
+function fileToText(file) {
+  return new Promise(function(resolve, reject) {
+    const reader = new FileReader();
+    reader.onload = function(){ resolve(reader.result); };
+    reader.onerror = function(){ reject(new Error('File read failed')); };
+    reader.readAsText(file);
+  });
+}
+
+function fileToArrayBuffer(file) {
+  return new Promise(function(resolve, reject) {
+    const reader = new FileReader();
+    reader.onload = function(){ resolve(reader.result); };
+    reader.onerror = function(){ reject(new Error('File read failed')); };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// INIT
+async function init() {
+  await loadData();
+  renderAmountGrid();
+  renderCards();
+  renderOfficeSummary();
+}
+init();
+</script>
+</body>
+</html>
