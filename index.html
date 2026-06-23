@@ -1500,8 +1500,12 @@ function base64UrlToBytes(value) {
 
 async function copyText(text) {
   if (navigator.clipboard && window.isSecureContext) {
-    await navigator.clipboard.writeText(text);
-    return;
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch (error) {
+      // Some browsers block clipboard access even on secure hosted pages.
+    }
   }
   const area = document.createElement('textarea');
   area.value = text;
@@ -1511,7 +1515,9 @@ async function copyText(text) {
   area.select();
   const copied = document.execCommand('copy');
   area.remove();
-  if (!copied) throw new Error('Could not copy the link. Please try again.');
+  if (!copied) {
+    window.prompt('Copy this team link:', text);
+  }
 }
 
 // CALC
